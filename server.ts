@@ -37,8 +37,8 @@ export default {
         });
       }
 
-      // Deployed to a real store but HydrogenCMS was never connected: every page shows the
-      // "Install HydrogenCMS" screen (env check only, so an outage of our API never triggers it).
+      // Deployed to a real store but HCMS was never connected: every page shows the
+      // "Install HCMS" screen (env check only, so an outage of our API never triggers it).
       // `/__hcms/*` still answers, so the app's Check connection can report what's missing.
       if (needsInstallScreen(env) && !isInstallScreenExempt(url.pathname)) {
         return installScreenResponse(env, method);

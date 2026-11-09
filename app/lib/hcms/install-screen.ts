@@ -1,10 +1,10 @@
 /**
- * "Install HydrogenCMS" screen: a storefront deployed to a real store without any HydrogenCMS
+ * "Install HCMS" screen: a storefront deployed to a real store without any HCMS
  * variables answers every page with a short setup guide instead of an empty storefront.
  *
  * Decided from the environment only, before React Router runs (`server.ts`), so:
- * - it never depends on our API: once any HydrogenCMS variable is set, the normal fallback chain
- *   (CDN → API → mirror → built-in theme) renders the store, even when HydrogenCMS is down;
+ * - it never depends on our API: once any HCMS variable is set, the normal fallback chain
+ *   (CDN → API → mirror → built-in theme) renders the store, even when HCMS is down;
  * - the mock.shop demo (no store token, `MOCK_SHOP=1`, local development) is never replaced;
  * - `/__hcms/*` (health, manifest, …) still answer, so the app's Check connection can report
  *   what's missing;
@@ -24,7 +24,7 @@ export type HcmsRequiredEnv = (typeof HCMS_REQUIRED_ENV)[number];
 
 /** Used when `HCMS_INSTALL_URL` isn't set. Swap for the App Store listing once it is public. */
 export const DEFAULT_INSTALL_URL =
-  'https://github.com/shreyaslabs-com/hydrogencms-starter#install-hydrogencms';
+  'https://github.com/shreyaslabs-com/hcms-hydrogen-starter#install-hcms';
 
 export type InstallScreenEnv = Partial<Record<HcmsRequiredEnv, string>> & {
   HCMS_INSTALL_URL?: string;
@@ -35,14 +35,14 @@ export type InstallScreenEnv = Partial<Record<HcmsRequiredEnv, string>> & {
 
 const isSet = (value: string | undefined) => Boolean(value?.trim());
 
-/** Required HydrogenCMS variables that are unset or blank (names only). */
+/** Required HCMS variables that are unset or blank (names only). */
 export function missingHcmsEnv(env: InstallScreenEnv): HcmsRequiredEnv[] {
   return HCMS_REQUIRED_ENV.filter((name) => !isSet(env[name]));
 }
 
 /**
- * True when this storefront runs on a real store and HydrogenCMS was never connected: no
- * HydrogenCMS variable at all. A partly configured storefront keeps rendering (the mirror still
+ * True when this storefront runs on a real store and HCMS was never connected: no
+ * HCMS variable at all. A partly configured storefront keeps rendering (the mirror still
  * serves the published theme); Check connection lists the rest.
  */
 export function needsInstallScreen(env: InstallScreenEnv): boolean {
@@ -89,7 +89,7 @@ export function installScreenHtml({
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Set up HydrogenCMS</title>
+<title>Set up HCMS</title>
 <style>
 :root{color-scheme:light dark;--bg:#f1f1f1;--card:#fff;--text:#303030;--muted:#616161;--line:#e3e3e3;--code:#f3f3f3;--btn:#303030;--btn-text:#fff}
 @media (prefers-color-scheme:dark){:root{--bg:#1a1a1a;--card:#262626;--text:#e3e3e3;--muted:#b5b5b5;--line:#3d3d3d;--code:#333;--btn:#f1f1f1;--btn-text:#1a1a1a}}
@@ -110,19 +110,19 @@ small{display:block;margin-top:20px;color:var(--muted);font-size:0.875rem}
 </head>
 <body>
 <main>
-<h1>This storefront runs on HydrogenCMS</h1>
-<p>It's deployed, but it isn't connected to HydrogenCMS yet. Finish setup to show your store here.</p>
+<h1>This storefront runs on HCMS</h1>
+<p>It's deployed, but it isn't connected to HCMS yet. Finish setup to show your store here.</p>
 <h2>Finish setup</h2>
 <ol>
-<li>Install the HydrogenCMS app from the Shopify App Store.</li>
-<li>In HydrogenCMS, open the <strong>Setup guide</strong> on Home, choose a plan, then open <strong>Connect your storefront</strong>.</li>
+<li>Install the <strong>HCMS: Hydrogen CMS</strong> app from the Shopify App Store.</li>
+<li>In HCMS, open the <strong>Setup guide</strong> on Home, choose a plan, then open <strong>Connect your storefront</strong>.</li>
 <li>In Shopify, go to <strong>Hydrogen › your storefront › Storefront settings › Environments and variables</strong> and add these variables to Production. Copy the values from the Setup guide.</li>
 <li>Redeploy the storefront, then select <strong>Check connection</strong> in the Setup guide.</li>
 </ol>
 <h2>Missing variables</h2>
 <ul>${vars}</ul>
-<a class="cta" href="${href}" rel="noopener">Install HydrogenCMS</a>
-<small>Already installed? The values are also in HydrogenCMS › Settings › Developers.</small>
+<a class="cta" href="${href}" rel="noopener">Install HCMS</a>
+<small>Already installed? The values are also in HCMS › Settings › Developers.</small>
 </main>
 </body>
 </html>

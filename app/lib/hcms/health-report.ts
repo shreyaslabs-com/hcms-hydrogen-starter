@@ -10,7 +10,7 @@ import { sign } from './forms.ts';
 export const REPORT_PARAM = 'hcms_report';
 
 const UNREACHABLE =
-  'Couldn’t reach HydrogenCMS at HCMS_API_URL. Copy the current value from HydrogenCMS › Setup (a dev tunnel URL changes when the app restarts), update it in Hydrogen › Environments and variables, and redeploy.';
+  'Couldn’t reach HCMS at HCMS_API_URL. Copy the current value from HCMS › Setup (a dev tunnel URL changes when the app restarts), update it in Hydrogen › Environments and variables, and redeploy.';
 
 export type ReportEnv = {
   HCMS_API_URL?: string | undefined;
@@ -45,7 +45,7 @@ export async function reportHealth({
     return {
       ok: false,
       message:
-        'The link expired or HCMS_PREVIEW_SECRET doesn’t match. Copy it again from HydrogenCMS › Setup, redeploy, and check again.',
+        'The link expired or HCMS_PREVIEW_SECRET doesn’t match. Copy it again from HCMS › Setup, redeploy, and check again.',
     };
   const payload = JSON.stringify({
     shop,
@@ -68,17 +68,17 @@ export async function reportHealth({
     if (res.ok)
       return {
         ok: true,
-        message: 'Connected. Go back to HydrogenCMS › Setup and click Refresh.',
+        message: 'Connected. Go back to HCMS and press Refresh.',
       };
     if (res.status === 401)
       return {
         ok: false,
         message:
-          'HydrogenCMS rejected the signature: HCMS_PREVIEW_SECRET or PUBLIC_STORE_DOMAIN doesn’t match this app install.',
+          'HCMS rejected the signature: HCMS_PREVIEW_SECRET or PUBLIC_STORE_DOMAIN doesn’t match this app install.',
       };
     // 502–504 / Cloudflare 52x–530: nothing answering at HCMS_API_URL (often a stale dev tunnel).
     if (res.status >= 502 && res.status <= 530) return { ok: false, message: UNREACHABLE };
-    return { ok: false, message: `HydrogenCMS answered ${res.status}. Try again in a minute.` };
+    return { ok: false, message: `HCMS answered ${res.status}. Try again in a minute.` };
   } catch {
     return { ok: false, message: UNREACHABLE };
   }
@@ -87,7 +87,7 @@ export async function reportHealth({
 /** Minimal page for the tab (no scripts; messages are fixed strings, escaped anyway). */
 export function reportPage({ ok, message }: ReportResult): Response {
   const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-  const title = ok ? 'HydrogenCMS: storefront connected' : 'HydrogenCMS: check failed';
+  const title = ok ? 'HCMS: storefront connected' : 'HCMS: check failed';
   return new Response(
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title></head><body><main><h1>${esc(title)}</h1><p>${esc(message)}</p></main></body></html>`,
     {

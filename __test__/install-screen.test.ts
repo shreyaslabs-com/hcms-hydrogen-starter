@@ -22,7 +22,7 @@ const configured = {
   HCMS_PUBLIC_KEY: 'public-key-456',
 };
 
-test('shows only on a real store with no HydrogenCMS variable at all', () => {
+test('shows only on a real store with no HCMS variable at all', () => {
   assert.equal(needsInstallScreen(realStore), true);
   assert.equal(needsInstallScreen({ ...realStore, HCMS_API_URL: '  ' }), true, 'blank = unset');
   assert.equal(needsInstallScreen(configured), false);
@@ -70,8 +70,8 @@ test('HTML: heading, steps, button, missing names, no script, escaped link', () 
     missing: ['HCMS_API_URL', 'HCMS_PUBLIC_KEY'],
     installHref: 'https://example.com/?a=1&b="2"',
   });
-  assert.match(html, /This storefront runs on HydrogenCMS/);
-  assert.match(html, /Install HydrogenCMS<\/a>/);
+  assert.match(html, /This storefront runs on HCMS/);
+  assert.match(html, /Install HCMS<\/a>/);
   assert.match(html, /Connect your storefront/);
   assert.match(html, /Redeploy/);
   assert.match(html, /<code>HCMS_API_URL<\/code>/);
