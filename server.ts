@@ -4,6 +4,11 @@ import * as serverBuild from 'virtual:react-router/server-build';
 import { withReconciledCartCookie } from '~/lib/cart-cookie';
 import { envContext } from '~/lib/env';
 import { FONT_PATH_PREFIX, fontProxySecret, serveSelfHostedFont } from '~/lib/hcms/font-proxy';
+import {
+  installScreenResponse,
+  isInstallScreenExempt,
+  needsInstallScreen,
+} from '~/lib/hcms/install-screen';
 
 /**
  * Export a fetch handler in module format for Oxygen / mini-oxygen.
@@ -30,6 +35,13 @@ export default {
           status: 301,
           headers: { location: url.pathname.replace(/[/]+/g, '/') },
         });
+      }
+
+      // Deployed to a real store but HydrogenCMS was never connected: every page shows the
+      // "Install HydrogenCMS" screen (env check only, so an outage of our API never triggers it).
+      // `/__hcms/*` still answers, so the app's Check connection can report what's missing.
+      if (needsInstallScreen(env) && !isInstallScreenExempt(url.pathname)) {
+        return installScreenResponse(env, method);
       }
 
       const cache = await caches.open('hydrogen-v1');

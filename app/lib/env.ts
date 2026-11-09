@@ -9,6 +9,8 @@ export type Env = {
   HCMS_CDN_URL?: string;
   /** Signs editor preview tokens (T-1.2.7). Unset = preview off. Set per store during onboarding. */
   HCMS_PREVIEW_SECRET?: string;
+  /** "Install HydrogenCMS" button on the setup screen (shown while no HCMS_* variable is set). */
+  HCMS_INSTALL_URL?: string;
   MOCK_SHOP?: string;
   PRIVATE_STOREFRONT_API_TOKEN?: string;
   PUBLIC_CHECKOUT_DOMAIN?: string;
