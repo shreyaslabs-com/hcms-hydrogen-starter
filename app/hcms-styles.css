@@ -1,0 +1,435 @@
+/* Named component styles (T-2.87): Theme settings › Styles.
+ *
+ * The SDK's `themeStyles` writes `--<component>-<style>-*` custom properties (`--button-secondary-
+ * border-width`, `--card-custom-1-corner-radius`, `--type-preset-h1-size`, …) only for fields the
+ * merchant stored. Sections put a style class on the element (`hcms-button--secondary`,
+ * `hcms-card--style-custom-1`, `hcms-badge--custom-1`, `type-preset-h1`); each class maps its
+ * style's properties onto the element's locals (`--b-*` buttons, `--c-*` cards) with the Dawn
+ * globals (`--buttons-*`) and then the core look as fallbacks, so an empty style renders exactly
+ * like before. Inherited properties (font-family, letter-spacing, text-transform, line-height)
+ * use no fallback on purpose: an unset var makes them `unset`, i.e. inherited, as before.
+ *
+ * Button rules are unlayered so they win over the core `.button-*` component rules and the
+ * section's utility classes; colours still come from the section's colour scheme.
+ * Never style `outline` here: focus indicators stay as the core defines them (WCAG 2.2 AA).
+ */
+
+/* Buttons: fill (solid/outline/ghost switches), size, shape, border, shadow, hover, icon, type. */
+.hcms-button {
+  background: color-mix(
+    in srgb,
+    var(--color-button-primary) calc(var(--b-solid) * 100%),
+    transparent
+  );
+  color: color-mix(
+    in srgb,
+    var(--color-button-primary-text) calc(var(--b-solid) * 100%),
+    var(--color-button-outline-text)
+  );
+  border-style: solid;
+  border-width: var(--b-own-bw, calc(var(--b-outline) * var(--b-bw, 2px)));
+  border-color: var(--hcms-button-border-color, var(--color-button-outline-border));
+  border-radius: var(--b-radius, var(--radius-button));
+  padding-block: var(--b-py, var(--button-padding-y, 0.375rem));
+  padding-inline: var(--b-px, 1.5rem);
+  font-size: var(--b-fs, 0.875rem);
+  line-height: 1.25rem;
+  gap: 0.5em;
+}
+:is(.hcms-button, .hcms-button--link) {
+  text-transform: var(--b-tt);
+  letter-spacing: var(--b-ls);
+  font-family: var(--b-ff);
+}
+:is(.hcms-button, .hcms-button--link)::before {
+  content: var(--b-icon-before);
+}
+:is(.hcms-button, .hcms-button--link)::after {
+  content: var(--b-icon-after);
+}
+[dir='rtl'] :is(.hcms-button, .hcms-button--link)::before,
+[dir='rtl'] :is(.hcms-button, .hcms-button--link)::after {
+  display: inline-block;
+  scale: -1 1;
+}
+@media (hover: hover) {
+  .hcms-button:hover {
+    background: color-mix(
+      in srgb,
+      color-mix(
+          in srgb,
+          var(--color-button-primary-hover) calc(var(--b-solid) * 100%),
+          var(--color-surface-secondary)
+        )
+        calc(var(--b-hover-color) * 100%),
+      color-mix(in srgb, var(--color-button-primary) calc(var(--b-solid) * 100%), transparent)
+    );
+    text-decoration-line: var(--b-underline);
+  }
+}
+.hcms-button:active {
+  background: color-mix(
+    in srgb,
+    color-mix(
+        in srgb,
+        var(--color-button-primary-active) calc(var(--b-solid) * 100%),
+        color-mix(in oklab, var(--color-surface-secondary) 88%, black)
+      )
+      calc(var(--b-hover-color) * 100%),
+    color-mix(in srgb, var(--color-button-primary) calc(var(--b-solid) * 100%), transparent)
+  );
+}
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .hcms-button:hover {
+    /* Style lift, else the theme's hover effect; both unset = no transform. */
+    transform: translateY(var(--b-lift, var(--hover-lift))) scale(var(--hover-scale, 1));
+  }
+}
+
+/* One block per style (schema `BUTTON_STYLES`); defaults: primary/custom solid, secondary
+ * outline, tertiary ghost. Border/shadow fall back to Dawn's global button tokens. */
+.hcms-button--primary {
+  --b-solid: var(--button-primary-solid, 1);
+  --b-outline: var(--button-primary-outline, 0);
+  --b-hover-color: var(--button-primary-hover-color, 1);
+  --b-lift: var(--button-primary-hover-lift);
+  --b-underline: var(--button-primary-hover-underline);
+  --b-own-bw: var(--button-primary-border-width);
+  --b-bw: var(--button-primary-border-width, var(--buttons-border-width));
+  --b-bo: var(--button-primary-border-opacity, var(--buttons-border-opacity));
+  --b-sx: var(
+    --button-primary-shadow-horizontal-offset,
+    var(--buttons-shadow-horizontal-offset, 0px)
+  );
+  --b-sy: var(--button-primary-shadow-vertical-offset, var(--buttons-shadow-vertical-offset, 0px));
+  --b-sb: var(--button-primary-shadow-blur-radius, var(--buttons-shadow-blur-radius, 0px));
+  --b-so: var(--button-primary-shadow-opacity, var(--buttons-shadow-opacity, 0));
+  --b-radius: var(--button-primary-radius);
+  --b-py: var(--button-primary-padding-block);
+  --b-px: var(--button-primary-padding-inline);
+  --b-fs: var(--button-primary-font-size);
+  --b-icon-before: var(--button-primary-icon-before);
+  --b-icon-after: var(--button-primary-icon-after);
+  --b-tt: var(--button-primary-text-transform);
+  --b-ls: var(--button-primary-letter-spacing);
+  --b-ff: var(--button-primary-font-family);
+}
+.hcms-button--secondary {
+  --b-solid: var(--button-secondary-solid, 0);
+  --b-outline: var(--button-secondary-outline, 1);
+  --b-hover-color: var(--button-secondary-hover-color, 1);
+  --b-lift: var(--button-secondary-hover-lift);
+  --b-underline: var(--button-secondary-hover-underline);
+  --b-own-bw: var(--button-secondary-border-width);
+  --b-bw: var(--button-secondary-border-width, var(--buttons-border-width));
+  --b-bo: var(--button-secondary-border-opacity, var(--buttons-border-opacity));
+  --b-sx: var(
+    --button-secondary-shadow-horizontal-offset,
+    var(--buttons-shadow-horizontal-offset, 0px)
+  );
+  --b-sy: var(
+    --button-secondary-shadow-vertical-offset,
+    var(--buttons-shadow-vertical-offset, 0px)
+  );
+  --b-sb: var(--button-secondary-shadow-blur-radius, var(--buttons-shadow-blur-radius, 0px));
+  --b-so: var(--button-secondary-shadow-opacity, var(--buttons-shadow-opacity, 0));
+  --b-radius: var(--button-secondary-radius);
+  --b-py: var(--button-secondary-padding-block);
+  --b-px: var(--button-secondary-padding-inline);
+  --b-fs: var(--button-secondary-font-size);
+  --b-icon-before: var(--button-secondary-icon-before);
+  --b-icon-after: var(--button-secondary-icon-after);
+  --b-tt: var(--button-secondary-text-transform);
+  --b-ls: var(--button-secondary-letter-spacing);
+  --b-ff: var(--button-secondary-font-family);
+}
+.hcms-button--tertiary {
+  --b-solid: var(--button-tertiary-solid, 0);
+  --b-outline: var(--button-tertiary-outline, 0);
+  --b-hover-color: var(--button-tertiary-hover-color, 1);
+  --b-lift: var(--button-tertiary-hover-lift);
+  --b-underline: var(--button-tertiary-hover-underline);
+  --b-own-bw: var(--button-tertiary-border-width);
+  --b-bw: var(--button-tertiary-border-width, var(--buttons-border-width));
+  --b-bo: var(--button-tertiary-border-opacity, var(--buttons-border-opacity));
+  --b-sx: var(
+    --button-tertiary-shadow-horizontal-offset,
+    var(--buttons-shadow-horizontal-offset, 0px)
+  );
+  --b-sy: var(--button-tertiary-shadow-vertical-offset, var(--buttons-shadow-vertical-offset, 0px));
+  --b-sb: var(--button-tertiary-shadow-blur-radius, var(--buttons-shadow-blur-radius, 0px));
+  --b-so: var(--button-tertiary-shadow-opacity, var(--buttons-shadow-opacity, 0));
+  --b-radius: var(--button-tertiary-radius);
+  --b-py: var(--button-tertiary-padding-block);
+  --b-px: var(--button-tertiary-padding-inline);
+  --b-fs: var(--button-tertiary-font-size);
+  --b-icon-before: var(--button-tertiary-icon-before);
+  --b-icon-after: var(--button-tertiary-icon-after);
+  --b-tt: var(--button-tertiary-text-transform);
+  --b-ls: var(--button-tertiary-letter-spacing);
+  --b-ff: var(--button-tertiary-font-family);
+}
+.hcms-button--custom-1 {
+  --b-solid: var(--button-custom-1-solid, 1);
+  --b-outline: var(--button-custom-1-outline, 0);
+  --b-hover-color: var(--button-custom-1-hover-color, 1);
+  --b-lift: var(--button-custom-1-hover-lift);
+  --b-underline: var(--button-custom-1-hover-underline);
+  --b-own-bw: var(--button-custom-1-border-width);
+  --b-bw: var(--button-custom-1-border-width, var(--buttons-border-width));
+  --b-bo: var(--button-custom-1-border-opacity, var(--buttons-border-opacity));
+  --b-sx: var(
+    --button-custom-1-shadow-horizontal-offset,
+    var(--buttons-shadow-horizontal-offset, 0px)
+  );
+  --b-sy: var(--button-custom-1-shadow-vertical-offset, var(--buttons-shadow-vertical-offset, 0px));
+  --b-sb: var(--button-custom-1-shadow-blur-radius, var(--buttons-shadow-blur-radius, 0px));
+  --b-so: var(--button-custom-1-shadow-opacity, var(--buttons-shadow-opacity, 0));
+  --b-radius: var(--button-custom-1-radius);
+  --b-py: var(--button-custom-1-padding-block);
+  --b-px: var(--button-custom-1-padding-inline);
+  --b-fs: var(--button-custom-1-font-size);
+  --b-icon-before: var(--button-custom-1-icon-before);
+  --b-icon-after: var(--button-custom-1-icon-after);
+  --b-tt: var(--button-custom-1-text-transform);
+  --b-ls: var(--button-custom-1-letter-spacing);
+  --b-ff: var(--button-custom-1-font-family);
+}
+.hcms-button--custom-2 {
+  --b-solid: var(--button-custom-2-solid, 1);
+  --b-outline: var(--button-custom-2-outline, 0);
+  --b-hover-color: var(--button-custom-2-hover-color, 1);
+  --b-lift: var(--button-custom-2-hover-lift);
+  --b-underline: var(--button-custom-2-hover-underline);
+  --b-own-bw: var(--button-custom-2-border-width);
+  --b-bw: var(--button-custom-2-border-width, var(--buttons-border-width));
+  --b-bo: var(--button-custom-2-border-opacity, var(--buttons-border-opacity));
+  --b-sx: var(
+    --button-custom-2-shadow-horizontal-offset,
+    var(--buttons-shadow-horizontal-offset, 0px)
+  );
+  --b-sy: var(--button-custom-2-shadow-vertical-offset, var(--buttons-shadow-vertical-offset, 0px));
+  --b-sb: var(--button-custom-2-shadow-blur-radius, var(--buttons-shadow-blur-radius, 0px));
+  --b-so: var(--button-custom-2-shadow-opacity, var(--buttons-shadow-opacity, 0));
+  --b-radius: var(--button-custom-2-radius);
+  --b-py: var(--button-custom-2-padding-block);
+  --b-px: var(--button-custom-2-padding-inline);
+  --b-fs: var(--button-custom-2-font-size);
+  --b-icon-before: var(--button-custom-2-icon-before);
+  --b-icon-after: var(--button-custom-2-icon-after);
+  --b-tt: var(--button-custom-2-text-transform);
+  --b-ls: var(--button-custom-2-letter-spacing);
+  --b-ff: var(--button-custom-2-font-family);
+}
+.hcms-button--custom-3 {
+  --b-solid: var(--button-custom-3-solid, 1);
+  --b-outline: var(--button-custom-3-outline, 0);
+  --b-hover-color: var(--button-custom-3-hover-color, 1);
+  --b-lift: var(--button-custom-3-hover-lift);
+  --b-underline: var(--button-custom-3-hover-underline);
+  --b-own-bw: var(--button-custom-3-border-width);
+  --b-bw: var(--button-custom-3-border-width, var(--buttons-border-width));
+  --b-bo: var(--button-custom-3-border-opacity, var(--buttons-border-opacity));
+  --b-sx: var(
+    --button-custom-3-shadow-horizontal-offset,
+    var(--buttons-shadow-horizontal-offset, 0px)
+  );
+  --b-sy: var(--button-custom-3-shadow-vertical-offset, var(--buttons-shadow-vertical-offset, 0px));
+  --b-sb: var(--button-custom-3-shadow-blur-radius, var(--buttons-shadow-blur-radius, 0px));
+  --b-so: var(--button-custom-3-shadow-opacity, var(--buttons-shadow-opacity, 0));
+  --b-radius: var(--button-custom-3-radius);
+  --b-py: var(--button-custom-3-padding-block);
+  --b-px: var(--button-custom-3-padding-inline);
+  --b-fs: var(--button-custom-3-font-size);
+  --b-icon-before: var(--button-custom-3-icon-before);
+  --b-icon-after: var(--button-custom-3-icon-after);
+  --b-tt: var(--button-custom-3-text-transform);
+  --b-ls: var(--button-custom-3-letter-spacing);
+  --b-ff: var(--button-custom-3-font-family);
+}
+.hcms-button--custom-4 {
+  --b-solid: var(--button-custom-4-solid, 1);
+  --b-outline: var(--button-custom-4-outline, 0);
+  --b-hover-color: var(--button-custom-4-hover-color, 1);
+  --b-lift: var(--button-custom-4-hover-lift);
+  --b-underline: var(--button-custom-4-hover-underline);
+  --b-own-bw: var(--button-custom-4-border-width);
+  --b-bw: var(--button-custom-4-border-width, var(--buttons-border-width));
+  --b-bo: var(--button-custom-4-border-opacity, var(--buttons-border-opacity));
+  --b-sx: var(
+    --button-custom-4-shadow-horizontal-offset,
+    var(--buttons-shadow-horizontal-offset, 0px)
+  );
+  --b-sy: var(--button-custom-4-shadow-vertical-offset, var(--buttons-shadow-vertical-offset, 0px));
+  --b-sb: var(--button-custom-4-shadow-blur-radius, var(--buttons-shadow-blur-radius, 0px));
+  --b-so: var(--button-custom-4-shadow-opacity, var(--buttons-shadow-opacity, 0));
+  --b-radius: var(--button-custom-4-radius);
+  --b-py: var(--button-custom-4-padding-block);
+  --b-px: var(--button-custom-4-padding-inline);
+  --b-fs: var(--button-custom-4-font-size);
+  --b-icon-before: var(--button-custom-4-icon-before);
+  --b-icon-after: var(--button-custom-4-icon-after);
+  --b-tt: var(--button-custom-4-text-transform);
+  --b-ls: var(--button-custom-4-letter-spacing);
+  --b-ff: var(--button-custom-4-font-family);
+}
+.hcms-button--link {
+  --b-icon-before: var(--button-link-icon-before);
+  --b-icon-after: var(--button-link-icon-after);
+  --b-tt: var(--button-link-text-transform);
+  --b-ls: var(--button-link-letter-spacing);
+  --b-ff: var(--button-link-font-family);
+}
+
+/* Inputs (Theme settings › Styles › Inputs): size + fill. The core reads --input-padding-*. */
+:root {
+  --input-padding-y: var(--input-default-padding-block);
+  --input-padding-x: var(--input-default-padding-inline);
+  --input-font-size: var(--input-default-font-size);
+}
+@layer base {
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='search'],
+  input[type='tel'],
+  input[type='url'],
+  input[type='number'],
+  input[type='date'],
+  textarea,
+  select {
+    --hcms-input-bg: color-mix(
+      in srgb,
+      var(--color-on-surface) calc(var(--input-default-filled) * 6%),
+      var(--color-surface)
+    );
+    background: var(--hcms-input-bg, var(--color-surface));
+    border-inline-width: var(--input-default-side-width, var(--inputs-border-width, 1px));
+    border-block-start-width: var(--input-default-side-width, var(--inputs-border-width, 1px));
+  }
+}
+
+@layer components {
+  /* Named card styles: start from the core card (not the kind's Dawn tokens). */
+  .hcms-card.hcms-card--style-custom-1 {
+    --c-radius: var(--card-custom-1-corner-radius);
+    --c-padding: var(--card-custom-1-image-padding);
+    --c-align: var(--card-custom-1-text-alignment);
+    --c-bg: var(--card-custom-1-background);
+    --c-fg: var(--card-custom-1-foreground);
+    --c-content: var(--card-custom-1-content-padding);
+    --c-bw: var(--card-custom-1-border-width);
+    --c-bo: var(--card-custom-1-border-opacity);
+    --c-sx: var(--card-custom-1-shadow-horizontal-offset, 0px);
+    --c-sy: var(--card-custom-1-shadow-vertical-offset, 0px);
+    --c-sb: var(--card-custom-1-shadow-blur-radius, 0px);
+    --c-so: var(--card-custom-1-shadow-opacity);
+  }
+  .hcms-card.hcms-card--style-custom-2 {
+    --c-radius: var(--card-custom-2-corner-radius);
+    --c-padding: var(--card-custom-2-image-padding);
+    --c-align: var(--card-custom-2-text-alignment);
+    --c-bg: var(--card-custom-2-background);
+    --c-fg: var(--card-custom-2-foreground);
+    --c-content: var(--card-custom-2-content-padding);
+    --c-bw: var(--card-custom-2-border-width);
+    --c-bo: var(--card-custom-2-border-opacity);
+    --c-sx: var(--card-custom-2-shadow-horizontal-offset, 0px);
+    --c-sy: var(--card-custom-2-shadow-vertical-offset, 0px);
+    --c-sb: var(--card-custom-2-shadow-blur-radius, 0px);
+    --c-so: var(--card-custom-2-shadow-opacity);
+  }
+  .hcms-card.hcms-card--style-custom-3 {
+    --c-radius: var(--card-custom-3-corner-radius);
+    --c-padding: var(--card-custom-3-image-padding);
+    --c-align: var(--card-custom-3-text-alignment);
+    --c-bg: var(--card-custom-3-background);
+    --c-fg: var(--card-custom-3-foreground);
+    --c-content: var(--card-custom-3-content-padding);
+    --c-bw: var(--card-custom-3-border-width);
+    --c-bo: var(--card-custom-3-border-opacity);
+    --c-sx: var(--card-custom-3-shadow-horizontal-offset, 0px);
+    --c-sy: var(--card-custom-3-shadow-vertical-offset, 0px);
+    --c-sb: var(--card-custom-3-shadow-blur-radius, 0px);
+    --c-so: var(--card-custom-3-shadow-opacity);
+  }
+  /* Typography presets (Horizon `type_preset`; composer text/heading blocks). Fallbacks = the
+   * core class the preset already renders with. */
+  .type-preset-paragraph {
+    font-size: var(--type-preset-paragraph-size, var(--type-paragraph-size));
+    font-family: var(--type-preset-paragraph-font-family, var(--type-paragraph-font));
+    line-height: var(--type-preset-paragraph-line-height, 1.625);
+    letter-spacing: var(--type-preset-paragraph-letter-spacing);
+    text-transform: var(--type-preset-paragraph-text-transform);
+  }
+  .type-preset-h1 {
+    font-size: var(--type-preset-h1-size, var(--type-heading-2xl-size));
+    font-family: var(--type-preset-h1-font-family, var(--type-heading-2xl-font));
+    line-height: var(--type-preset-h1-line-height, 1.25);
+    letter-spacing: var(--type-preset-h1-letter-spacing);
+    text-transform: var(--type-preset-h1-text-transform);
+  }
+  .type-preset-h2 {
+    font-size: var(--type-preset-h2-size, var(--type-heading-xl-size));
+    font-family: var(--type-preset-h2-font-family, var(--type-heading-xl-font));
+    line-height: var(--type-preset-h2-line-height);
+    letter-spacing: var(--type-preset-h2-letter-spacing);
+    text-transform: var(--type-preset-h2-text-transform);
+  }
+  .type-preset-h3 {
+    font-size: var(--type-preset-h3-size, var(--type-heading-lg-size));
+    font-family: var(--type-preset-h3-font-family, var(--type-heading-lg-font));
+    line-height: var(--type-preset-h3-line-height);
+    letter-spacing: var(--type-preset-h3-letter-spacing);
+    text-transform: var(--type-preset-h3-text-transform);
+  }
+  .type-preset-h4 {
+    font-size: var(--type-preset-h4-size, var(--type-heading-md-size));
+    font-family: var(--type-preset-h4-font-family, var(--type-heading-md-font));
+    line-height: var(--type-preset-h4-line-height);
+    letter-spacing: var(--type-preset-h4-letter-spacing);
+    text-transform: var(--type-preset-h4-text-transform);
+  }
+  .type-preset-h5 {
+    font-size: var(--type-preset-h5-size, var(--type-heading-sm-size));
+    font-family: var(--type-preset-h5-font-family, var(--type-heading-sm-font));
+    line-height: var(--type-preset-h5-line-height);
+    letter-spacing: var(--type-preset-h5-letter-spacing);
+    text-transform: var(--type-preset-h5-text-transform);
+  }
+  .type-preset-h6 {
+    font-size: var(--type-preset-h6-size, var(--type-paragraph-size));
+    font-family: var(--type-preset-h6-font-family, var(--type-paragraph-font));
+    line-height: var(--type-preset-h6-line-height, 1.625);
+    letter-spacing: var(--type-preset-h6-letter-spacing);
+    text-transform: var(--type-preset-h6-text-transform);
+  }
+}
+
+/* Named badge styles (card badges `custom_badge_style`). */
+.hcms-badge.hcms-badge--custom-1 {
+  --color-badge-default: var(--badge-custom-1-background);
+  --color-badge-default-text: var(--badge-custom-1-foreground);
+  border-radius: var(--badge-custom-1-radius, var(--badge-corner-radius, 9999px));
+  text-transform: var(--badge-custom-1-text-transform);
+}
+.hcms-badge.hcms-badge--custom-2 {
+  --color-badge-default: var(--badge-custom-2-background);
+  --color-badge-default-text: var(--badge-custom-2-foreground);
+  border-radius: var(--badge-custom-2-radius, var(--badge-corner-radius, 9999px));
+  text-transform: var(--badge-custom-2-text-transform);
+}
+.hcms-badge.hcms-badge--custom-3 {
+  --color-badge-default: var(--badge-custom-3-background);
+  --color-badge-default-text: var(--badge-custom-3-foreground);
+  border-radius: var(--badge-custom-3-radius, var(--badge-corner-radius, 9999px));
+  text-transform: var(--badge-custom-3-text-transform);
+}
+
+/* Dividers (Theme settings › Styles › Dividers): opacity of the automatic colour + line style. */
+.hcms-divider {
+  mask-image: var(--divider-default-mask, none);
+}
+.hcms-divider.opacity-20 {
+  opacity: var(--divider-default-opacity, 0.2);
+}

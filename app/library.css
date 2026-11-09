@@ -1,0 +1,299 @@
+/*
+ * Component library page (T-2.85, editor preview only). Gallery showcase: an intro band, sticky
+ * category chips, then every example framed as a specimen card. Every colour and font comes from
+ * the theme's own variables, so the page restyles with Theme settings like the sections inside it.
+ * Route-level stylesheet: shoppers never download it.
+ */
+.hl {
+  --hl-fg: var(--color-on-surface, #121212);
+  --hl-muted: var(--color-on-surface-secondary, color-mix(in srgb, var(--hl-fg) 62%, transparent));
+  --hl-line: var(--color-border, color-mix(in srgb, var(--hl-fg) 14%, transparent));
+  --hl-surface: var(--color-surface, #fff);
+  --hl-soft: color-mix(in srgb, var(--hl-fg) 4%, var(--hl-surface));
+  --hl-accent: var(--color-button-primary, var(--hl-fg));
+  --hl-accent-text: var(--color-button-primary-text, var(--hl-surface));
+  --hl-radius: 20px;
+  --hl-gutter: var(--spacing-margin, 1.25rem);
+  background: var(--hl-soft);
+  color: var(--hl-fg);
+  padding-block-end: 96px;
+}
+.hl-wrap {
+  max-inline-size: 1240px;
+  margin-inline: auto;
+  padding-inline: var(--hl-gutter);
+}
+
+/* Intro band */
+.hl-intro {
+  position: relative;
+  overflow: hidden;
+  padding-block: 72px 48px;
+  background:
+    radial-gradient(
+      60rem 22rem at 85% -10%,
+      color-mix(in srgb, var(--hl-accent) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      40rem 18rem at 0% 110%,
+      color-mix(in srgb, var(--hl-accent) 9%, transparent),
+      transparent 70%
+    ),
+    var(--hl-surface);
+  border-block-end: 1px solid var(--hl-line);
+}
+.hl-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hl-muted);
+}
+.hl-eyebrow::before {
+  content: '';
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--hl-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--hl-accent) 18%, transparent);
+}
+.hl-title {
+  margin: 14px 0 0;
+  font-family: var(--font-heading, inherit);
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.hl-lede {
+  margin: 16px 0 0;
+  max-inline-size: 60ch;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--hl-muted);
+}
+.hl-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block-start: 28px;
+}
+.hl-stat {
+  display: grid;
+  gap: 2px;
+  min-inline-size: 132px;
+  padding: 14px 18px;
+  border: 1px solid var(--hl-line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--hl-surface) 80%, transparent);
+  backdrop-filter: blur(6px);
+}
+.hl-stat b {
+  font-family: var(--font-heading, inherit);
+  font-size: 1.75rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.hl-stat span {
+  font-size: 13px;
+  color: var(--hl-muted);
+}
+
+/* Sticky category chips */
+.hl-nav {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+  border-block-end: 1px solid var(--hl-line);
+  background: color-mix(in srgb, var(--hl-surface) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+}
+.hl-chips {
+  display: flex;
+  gap: 8px;
+  padding-block: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hl-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--hl-line);
+  border-radius: 999px;
+  background: var(--hl-surface);
+  color: var(--hl-fg);
+  font-size: 14px;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.hl-chip:hover,
+.hl-chip:focus-visible {
+  border-color: var(--hl-fg);
+}
+.hl-chip small {
+  font-size: 12px;
+  color: var(--hl-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Categories */
+.hl-category {
+  scroll-margin-block-start: 72px;
+  padding-block-start: 64px;
+}
+.hl-category-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+  margin-block-end: 20px;
+}
+.hl-category-head h2 {
+  margin: 0;
+  font-family: var(--font-heading, inherit);
+  font-size: clamp(1.5rem, 3vw, 2.125rem);
+  letter-spacing: -0.01em;
+}
+.hl-category-head p {
+  margin: 0;
+  color: var(--hl-muted);
+}
+.hl-cards {
+  display: grid;
+  gap: 28px;
+}
+
+/* Specimen cards */
+.hl-card {
+  overflow: hidden;
+  border: 1px solid var(--hl-line);
+  border-radius: var(--hl-radius);
+  background: var(--hl-surface);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 12px 32px -18px rgb(0 0 0 / 0.18);
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+.hl-card:hover {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.05),
+    0 24px 48px -20px rgb(0 0 0 / 0.28);
+}
+.hl-card-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 14px 18px 14px 22px;
+  border-block-end: 1px solid var(--hl-line);
+}
+.hl-card-name {
+  display: grid;
+  gap: 2px;
+  margin-inline-end: auto;
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.hl-card-name b {
+  font-size: 15px;
+}
+.hl-card-name span {
+  font-size: 13px;
+  color: var(--hl-muted);
+}
+.hl-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--hl-soft);
+  color: var(--hl-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.hl-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--hl-accent);
+  color: var(--hl-accent-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.hl-add:hover {
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--hl-accent) 60%, transparent);
+  transform: translateY(-1px);
+}
+.hl-add:focus-visible,
+.hl-card-name:focus-visible,
+.hl-chip:focus-visible {
+  outline: 2px solid var(--hl-accent);
+  outline-offset: 2px;
+}
+/* The live section: fixed/sticky children stay inside the card. */
+.hl-stage {
+  position: relative;
+  isolation: isolate;
+  contain: layout paint;
+}
+/* Selecting scrolls to the section: keep its card bar clear of the sticky chips. */
+.hl-stage [data-hcms-section-id] {
+  scroll-margin-block-start: 156px;
+}
+/* A section that renders nothing until it has content (an end date, an image): say so. */
+.hl-stage:has([data-hcms-section-id]:empty)::after {
+  content: 'Shows on your store once it has content, like an image or an end date. Add it to a page to set it up.';
+  display: block;
+  padding: 44px 24px;
+  text-align: center;
+  color: var(--hl-muted);
+  background: repeating-linear-gradient(-45deg, var(--hl-soft) 0 12px, var(--hl-surface) 12px 24px);
+}
+.hl-empty {
+  padding: 96px 0;
+  text-align: center;
+  color: var(--hl-muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .hl-card {
+      animation: hl-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
+  }
+}
+@keyframes hl-rise {
+  from {
+    opacity: 0.35;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

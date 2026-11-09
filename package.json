@@ -1,0 +1,57 @@
+{
+  "name": "hydrogencms-storefront",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "react-router build",
+    "deploy": "shopify hydrogen deploy --assets-dir dist/client --worker-dir dist/server",
+    "dev": "hydrogen skills check --mode=warn && vite dev",
+    "dev:https": "hydrogen skills check --mode=warn && vite dev",
+    "preview": "react-router build && vite preview",
+    "typecheck": "react-router typegen && tsc && hydrogen gql check --fail-on-warn",
+    "test": "node --test --experimental-strip-types --no-warnings=ExperimentalWarning __test__/*.test.ts",
+    "chaos": "node scripts/chaos.mjs",
+    "budgets": "node scripts/budgets.mjs --max 166 --max-hydrate 214 --max-hydrate-ours 79 --max-page-ours 103",
+    "hcms:bundle-preset": "node scripts/write-last-known-good.mjs && prettier --write app/hcms/last-known-good.json",
+    "preview:tunnel": "react-router build && HCMS_DEV_STOREFRONT_HOST=${HCMS_DEV_STOREFRONT_HOST:-hcms-sf.shreyaslabs.com} vite preview --port 4795 --strictPort"
+  },
+  "dependencies": {
+    "@hcms/hydrogen": "file:vendor/hcms-hydrogen-0.1.0.tgz",
+    "@hcms/schema": "file:vendor/hcms-schema-0.1.0.tgz",
+    "@hcms/sections": "file:vendor/hcms-sections-0.1.0.tgz",
+    "@remix-run/cookie": "0.6.0",
+    "@remix-run/session": "0.4.3",
+    "@shopify/hydrogen": "2026.10.1",
+    "isbot": "5.2.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "7.15.1"
+  },
+  "devDependencies": {
+    "@hcms/cli": "file:vendor/hcms-cli-0.1.0.tgz",
+    "@react-router/dev": "7.15.1",
+    "@shopify/cli": "4.8.1",
+    "@shopify/mini-oxygen": "4.2.3",
+    "@shopify/oxygen-workers-types": "4.2.0",
+    "@tailwindcss/vite": "4.3.4",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "gql.tada": "1.11.4",
+    "graphql": "16.15.0",
+    "tailwindcss": "4.3.4",
+    "typescript": "5.9.3",
+    "vite": "8.3.6"
+  },
+  "engines": {
+    "node": "^22.12 || ^24"
+  },
+  "overrides": {
+    "@hcms/shared": "file:vendor/hcms-shared-0.1.0.tgz",
+    "@hcms/schema": "file:vendor/hcms-schema-0.1.0.tgz",
+    "@hcms/hydrogen": "file:vendor/hcms-hydrogen-0.1.0.tgz",
+    "@hcms/sections": "file:vendor/hcms-sections-0.1.0.tgz",
+    "@hcms/cli": "file:vendor/hcms-cli-0.1.0.tgz"
+  }
+}

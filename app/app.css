@@ -1,0 +1,244 @@
+@import 'tailwindcss';
+@import './tokens.css';
+/* Theme-settings design tokens (T-2.65): SDK themeStyles vars → core tokens/components. */
+@import './hcms-tokens.css';
+/* Named component styles (T-2.87): Theme settings › Styles (button/card/badge/type classes). */
+@import './hcms-styles.css';
+/* Official sections' component CSS + product icon masks: CSS, not JS (T-2.118, D-26 budget). */
+@import '../node_modules/@hcms/sections/dist/sections.css';
+
+/* Official HCMS sections ship Tailwind classes in their package build (D-20). */
+@source '../node_modules/@hcms/sections/dist';
+
+/* `rtl:` follows `<html dir>` only (T-2.92; root sets it from the market language). Tailwind's
+ * default also matches `:lang(ku)` etc., which would mirror icons on an LTR Kurdish (Latin) page. */
+@custom-variant rtl (&:where([dir='rtl'], [dir='rtl'] *));
+
+/* App-only CSS the frozen core (tokens.css) does not own.
+ *
+ * The core owns the design tokens AND the drawer *box* (.drawer-right /
+ * .drawer-left: position, size, surface, backdrop color, responsive width).
+ * It does NOT own the open/close MOTION or the body scroll lock — those are
+ * app-owned and live here.
+ *
+ * Do NOT add web fonts or @theme font overrides here: the core tokens lock the
+ * example typography to system-ui.
+ */
+
+/* Header icons in currentColor (scheme text): the static SVG is only the mask shape. */
+.hcms-mask-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  background-color: currentColor;
+  mask: var(--hcms-icon) center / contain no-repeat;
+}
+/* Default header masks; `@hcms/sections` sections.css overrides them for the header `cart_icon`
+ * and theme `icon_stroke` settings (more specific selectors). */
+[data-hcms-header-icon='search'] {
+  --hcms-icon: url(/icons/icon-search.svg);
+}
+[data-hcms-header-icon='account'] {
+  --hcms-icon: url(/icons/icon-user.svg);
+}
+[data-hcms-header-icon='cart'] {
+  --hcms-icon: url(/icons/icon-cart.svg);
+}
+
+/* Art-directed images (`<HcmsImage mobile>`): each source keeps its own focal point. */
+.hcms-art {
+  object-position: var(--hcms-op, 50% 50%);
+}
+@media (max-width: 47.99rem) {
+  .hcms-art {
+    object-position: var(--hcms-op-m, 50% 50%);
+  }
+}
+
+/* Drawer slide-in animation.
+ * The cart drawer uses `.drawer-right` (slides from the inline-end edge); the
+ * mobile-nav drawer uses `.drawer-left` (slides from the inline-start edge).
+ * The core positions them with logical insets; the off-screen offset flips
+ * under `dir="rtl"` (T-2.92) so each still slides in from its own edge.
+ * `overlay`/`display` with `allow-discrete` keep the dialog transitionable
+ * while it leaves the top layer on close. */
+.drawer-right,
+.drawer-left {
+  transition:
+    transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
+    overlay 250ms allow-discrete,
+    display 250ms allow-discrete;
+  transform: translateX(var(--hcms-drawer-from));
+}
+
+/* `[dir]`, not `:dir()`: Lightning CSS lowers `:dir()` to a `:lang()` list. */
+.drawer-right,
+[dir='rtl'] .drawer-left {
+  --hcms-drawer-from: 100%;
+}
+
+.drawer-left,
+[dir='rtl'] .drawer-right {
+  --hcms-drawer-from: -100%;
+}
+
+.drawer-right[open],
+.drawer-left[open] {
+  transform: translateX(0);
+}
+
+@starting-style {
+  .drawer-right[open],
+  .drawer-left[open] {
+    transform: translateX(var(--hcms-drawer-from));
+  }
+}
+
+/* Backdrop fade-in. The core sets the open backdrop color; here we make it
+ * start transparent so it can transition in (and back out on close). */
+.drawer-right::backdrop,
+.drawer-left::backdrop {
+  background: rgb(0 0 0 / 0);
+  transition:
+    background-color 250ms ease-out,
+    overlay 250ms allow-discrete,
+    display 250ms allow-discrete;
+}
+
+.drawer-right[open]::backdrop,
+.drawer-left[open]::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+
+@starting-style {
+  .drawer-right[open]::backdrop,
+  .drawer-left[open]::backdrop {
+    background: rgb(0 0 0 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-right,
+  .drawer-left,
+  .drawer-right::backdrop,
+  .drawer-left::backdrop {
+    transition: none;
+  }
+}
+
+/* Body scroll lock while any drawer is open — pure CSS, no JS class toggling. */
+body:has(.drawer-right[open]),
+body:has(.drawer-left[open]) {
+  overflow: hidden;
+}
+
+/* Merchant HTML from Shopify (page body, article content, policies). Shopify is the
+ * source of this markup (D-10), so style the common elements without a typography plugin. */
+.rte {
+  color: var(--color-on-surface);
+  font-size: var(--type-paragraph-size);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.rte > * + * {
+  margin-top: 1em;
+}
+.rte :is(h1, h2, h3, h4) {
+  font-family: var(--font-heading);
+  line-height: 1.25;
+  margin-top: 1.6em;
+}
+.rte h1 {
+  font-size: var(--type-heading-xl-size);
+}
+.rte h2 {
+  font-size: var(--type-heading-lg-size);
+}
+.rte h3 {
+  font-size: var(--type-heading-md-size);
+}
+.rte :is(ul, ol) {
+  padding-inline-start: 1.5em;
+}
+.rte ul {
+  list-style: disc;
+}
+.rte ol {
+  list-style: decimal;
+}
+.rte a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rte img,
+.rte video,
+.rte iframe {
+  max-width: 100%;
+  height: auto;
+}
+.rte table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rte :is(th, td) {
+  border: 1px solid var(--color-border);
+  padding: 0.5em 0.75em;
+  text-align: start;
+}
+.rte blockquote {
+  border-inline-start: 3px solid var(--color-border);
+  padding-inline-start: 1em;
+  color: var(--color-on-surface-secondary);
+}
+
+/* Collection filters (T-2.118, Online Store-like): applied-count badge on the Filters button,
+ * quiet underlined "Clear all", sticky drawer footer (Clear all · View N products). */
+.hcms-filter-count {
+  display: inline-flex;
+  min-inline-size: 1.25rem;
+  block-size: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding-inline: 0.25rem;
+  background-color: var(--color-button-primary, var(--color-interactive));
+  color: var(--color-button-primary-text, var(--color-interactive-text));
+  font-size: 0.75rem;
+  line-height: 1;
+}
+.hcms-filter-clear {
+  display: inline-flex;
+  min-block-size: 2.75rem;
+  align-items: center;
+  color: var(--color-on-surface);
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+.hcms-filter-clear:hover {
+  text-decoration-thickness: 2px;
+}
+.hcms-filter-drawer__footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-surface);
+}
+
+/* Cart page summary rows (gift message, order note): closed `<details>` with a +/− marker. */
+.hcms-cart-disclosure > summary {
+  list-style: none;
+}
+.hcms-cart-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.hcms-cart-disclosure > summary::after {
+  content: '+';
+  font-size: 1.125rem;
+  line-height: 1;
+}
+.hcms-cart-disclosure[open] > summary::after {
+  content: '\2212';
+}

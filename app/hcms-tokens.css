@@ -1,0 +1,398 @@
+/* Theme-settings design tokens (T-2.65).
+ *
+ * The SDK's `themeStyles` writes Dawn's custom properties into `:root` (`--buttons-radius`,
+ * `--inputs-border-opacity`, `--product-card-corner-radius`, …) only for settings the merchant
+ * stored. Here they feed the core tokens and component classes; every `var()` falls back to the
+ * core design, so an unset setting looks exactly like before.
+ *
+ * Composite values (borders, shadows) are built on the element that uses them, so scheme colours
+ * (`--color-text`, `--color-shadow`) resolve per section. A composite that references an unset
+ * token is invalid at computed-value time, which makes the outer `var(…, fallback)` take the core
+ * value.
+ *
+ * Never style `outline` here: focus indicators stay as the core defines them (WCAG 2.2 AA).
+ */
+
+:root {
+  /* Theme settings › Layout › Page width (Dawn `page_width`): `max-w-page` containers. */
+  --spacing-page: var(--page-width, 80rem);
+  --radius-button: var(--buttons-radius, 0.5rem);
+  --radius-input: var(--inputs-radius, 0.5rem);
+  --radius-card: var(--media-radius, 0);
+
+  /* heading_scale / body scale (Dawn: --font-body-scale, --font-heading-scale = heading ÷ body). */
+  --type-paragraph-lg-size: calc(18px * var(--font-body-scale, 1));
+  --type-paragraph-size: calc(16px * var(--font-body-scale, 1));
+  --type-paragraph-sm-size: calc(14px * var(--font-body-scale, 1));
+  --type-heading-2xl-size: calc(36px * var(--font-body-scale, 1) * var(--font-heading-scale, 1));
+  --type-heading-xl-size: calc(30px * var(--font-body-scale, 1) * var(--font-heading-scale, 1));
+  --type-heading-lg-size: calc(24px * var(--font-body-scale, 1) * var(--font-heading-scale, 1));
+  --type-heading-md-size: calc(20px * var(--font-body-scale, 1) * var(--font-heading-scale, 1));
+  --type-heading-sm-size: calc(18px * var(--font-body-scale, 1) * var(--font-heading-scale, 1));
+
+  /* Theme fonts (Dawn `type_header_font`/`type_body_font`): the SDK writes `--font-<role>-family`
+   * (+ `-weight`/`-style`); the core tokens read `--font-heading`/`--font-body`. */
+  --font-heading: var(--font-heading-family, system-ui, -apple-system, sans-serif);
+  --font-body: var(--font-body-family, system-ui, -apple-system, sans-serif);
+}
+
+/* Body text in the theme's body font; headings keep the core weights unless the theme sets one. */
+body {
+  font-family: var(--font-body);
+  font-weight: var(--font-body-weight, 400);
+  font-style: var(--font-body-style, normal);
+}
+@layer components {
+  :is(.type-display, .type-heading-xl, .type-heading-lg) {
+    font-weight: var(--font-heading-weight, 300);
+    font-style: var(--font-heading-style, normal);
+  }
+  :is(.type-heading-md, .type-heading-sm) {
+    font-weight: var(--font-heading-weight, 400);
+    font-style: var(--font-heading-style, normal);
+  }
+  .richtext :is(h1, h2, h3, h4, h5, h6) {
+    font-weight: var(--font-heading-weight, 700);
+    font-style: var(--font-heading-style, normal);
+  }
+}
+
+/* Colour-scheme buttons (Dawn `button` / `button_label`). Schemes set `--color-button` and
+ * `--color-button-text` (`--color-button_label` = older SDK name) on the section; resolved on the
+ * element so the nearest scheme wins. Without a scheme the core brand colour stays. */
+:is(.button-primary, .button-outline, .hcms-button, .option-pill) {
+  --color-button-primary: var(--color-button, var(--color-interactive));
+  /* No stored label: the scheme's background (Dawn pairs them), so a light button on a dark
+   * scheme never gets the core white label. */
+  --color-button-primary-text: var(
+    --color-button-text,
+    var(--color-button_label, var(--color-background, var(--color-interactive-text)))
+  );
+  --color-button-primary-hover: color-mix(
+    in oklab,
+    var(--color-button, var(--color-interactive)) 85%,
+    var(--color-button-text, var(--color-button_label, black))
+  );
+  --color-button-primary-active: color-mix(
+    in oklab,
+    var(--color-button, var(--color-interactive)) 72%,
+    var(--color-button-text, var(--color-button_label, black))
+  );
+  --color-button-outline-border: var(--color-button, var(--color-interactive));
+  --color-button-outline-text: var(--color-button, var(--color-interactive));
+}
+@layer components {
+  .option-pill:is([aria-pressed='true'], [aria-current='true'], .is-selected) {
+    background: var(--color-button-primary);
+    color: var(--color-button-primary-text);
+    border-color: var(--color-button-primary);
+  }
+}
+
+/* Secondary text (vendor, compare-at price, meta) follows the colour scheme (T-2.118): 72 % of
+ * the scheme text over its background keeps ≥ 4.5:1 on tinted and dark schemes, where the core
+ * grey (#6b7280) drops to ≈ 4.3:1 on rose/sand or disappears on navy. Unset scheme = core grey. */
+[class*='color-scheme-'] {
+  --color-on-surface-secondary: color-mix(
+    in srgb,
+    var(--color-text, var(--color-on-surface)) 72%,
+    var(--color-background, var(--color-surface))
+  );
+  /* Re-declared here: `:root`'s alias resolved against the root grey. */
+  --color-compare: var(--color-on-surface-secondary);
+}
+
+/* Space between template sections (spacing_sections), like Online Store: only between the page's
+ * own sections inside <main> — never between header/footer group sections (announcement bar and
+ * header touch). Sections that only hold fixed UI (bottom navigation, chat button) take no room in
+ * the flow, so they get no gap either (SF-16). */
+main [data-hcms-section-id]
+  + [data-hcms-section-id]:not(:has([data-hcms-bottom-nav], [data-hcms-fixed])) {
+  margin-block-start: var(--spacing-sections-mobile, 0px);
+}
+@media (min-width: 48rem) {
+  main [data-hcms-section-id]
+    + [data-hcms-section-id]:not(:has([data-hcms-bottom-nav], [data-hcms-fixed])) {
+    margin-block-start: var(--spacing-sections-desktop, 0px);
+  }
+}
+
+/* Product/collection grids (spacing_grid_*). Fallbacks = the grid's own gap-x-4 gap-y-8. */
+.hcms-grid {
+  column-gap: var(--grid-mobile-horizontal-spacing, 1rem);
+  row-gap: var(--grid-mobile-vertical-spacing, 2rem);
+}
+@media (min-width: 48rem) {
+  .hcms-grid {
+    column-gap: var(--grid-desktop-horizontal-spacing, 1rem);
+    row-gap: var(--grid-desktop-vertical-spacing, 2rem);
+  }
+}
+
+/* Buttons: border thickness/opacity + shadow (radius via --radius-button).
+ * Each button reads per-style locals (`--b-*`) that today all resolve to Dawn's one global style
+ * (`--buttons-*`). Named styles (T-2.87) override them per style in `hcms-styles.css`
+ * (`.hcms-button--secondary { --b-bw: var(--button-secondary-border-width, …) }`). */
+@layer components {
+  :is(.button-primary, .button-secondary, .button-outline) {
+    --b-bw: var(--buttons-border-width);
+    --b-bo: var(--buttons-border-opacity);
+    --b-sx: var(--buttons-shadow-horizontal-offset, 0px);
+    --b-sy: var(--buttons-shadow-vertical-offset, 0px);
+    --b-sb: var(--buttons-shadow-blur-radius, 0px);
+    --b-so: var(--buttons-shadow-opacity, 0);
+    --hcms-button-border-color: color-mix(
+      in srgb,
+      currentColor calc(var(--b-bo) * 100%),
+      transparent
+    );
+    box-shadow: var(--b-sx) var(--b-sy) var(--b-sb)
+      color-mix(
+        in srgb,
+        var(--color-shadow, var(--color-on-surface)) calc(var(--b-so) * 100%),
+        transparent
+      );
+  }
+  .button-secondary {
+    border-width: var(--b-bw, 1px);
+    border-color: var(--hcms-button-border-color, var(--color-border));
+  }
+  .button-outline {
+    border-width: var(--b-bw, 2px);
+    border-color: var(--hcms-button-border-color, var(--color-button-outline-border));
+  }
+}
+
+/* Inputs (inputs_*): same selectors as the core base layer, declared later. */
+@layer base {
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='search'],
+  input[type='tel'],
+  input[type='url'],
+  input[type='number'],
+  input[type='date'],
+  textarea,
+  select {
+    --color-input-border: color-mix(
+      in srgb,
+      var(--color-text, var(--color-on-surface)) calc(var(--inputs-border-opacity) * 100%),
+      transparent
+    );
+    border-width: var(--inputs-border-width, 1px);
+    box-shadow: var(--inputs-shadow-horizontal-offset, 0px)
+      var(--inputs-shadow-vertical-offset, 0px) var(--inputs-shadow-blur-radius, 0px)
+      color-mix(
+        in srgb,
+        var(--color-shadow, var(--color-on-surface)) calc(var(--inputs-shadow-opacity, 0) * 100%),
+        transparent
+      );
+  }
+}
+
+/* Variant pills (variant_pills_*). */
+@layer components {
+  .option-pill {
+    --hcms-pill-border: color-mix(
+      in srgb,
+      currentColor calc(var(--variant-pills-border-opacity) * 100%),
+      transparent
+    );
+    border-radius: var(--variant-pills-radius, var(--radius));
+    border-width: var(--variant-pills-border-width, 1px);
+    box-shadow: var(--variant-pills-shadow-horizontal-offset, 0px)
+      var(--variant-pills-shadow-vertical-offset, 0px) var(--variant-pills-shadow-blur-radius, 0px)
+      color-mix(
+        in srgb,
+        var(--color-shadow, var(--color-on-surface))
+          calc(var(--variant-pills-shadow-opacity, 0) * 100%),
+        transparent
+      );
+  }
+  .option-pill:not([aria-pressed='true'], [aria-current='true'], .is-selected) {
+    border-color: var(--hcms-pill-border, var(--color-border));
+  }
+}
+
+@layer components {
+  /* Cards (card_*, collection_card_*, blog_card_*). `.hcms-card--<kind>` comes from @hcms/sections;
+   * each kind maps its Dawn vars onto the shared `--c-*` locals (named card styles extend this). */
+  .hcms-card--product {
+    --c-radius: var(--product-card-corner-radius);
+    --c-padding: var(--product-card-image-padding);
+    --c-align: var(--product-card-text-alignment);
+    --c-bg: var(--product-card-background);
+    --c-fg: var(--product-card-foreground);
+    --c-content: var(--product-card-content-padding);
+    --c-bw: var(--product-card-border-width);
+    --c-bo: var(--product-card-border-opacity);
+    --c-sx: var(--product-card-shadow-horizontal-offset, 0px);
+    --c-sy: var(--product-card-shadow-vertical-offset, 0px);
+    --c-sb: var(--product-card-shadow-blur-radius, 0px);
+    --c-so: var(--product-card-shadow-opacity);
+  }
+  .hcms-card--collection {
+    --c-radius: var(--collection-card-corner-radius);
+    --c-padding: var(--collection-card-image-padding);
+    --c-align: var(--collection-card-text-alignment);
+    --c-bg: var(--collection-card-background);
+    --c-fg: var(--collection-card-foreground);
+    --c-content: var(--collection-card-content-padding);
+    --c-bw: var(--collection-card-border-width);
+    --c-bo: var(--collection-card-border-opacity);
+    --c-sx: var(--collection-card-shadow-horizontal-offset, 0px);
+    --c-sy: var(--collection-card-shadow-vertical-offset, 0px);
+    --c-sb: var(--collection-card-shadow-blur-radius, 0px);
+    --c-so: var(--collection-card-shadow-opacity);
+  }
+  .hcms-card--blog {
+    --c-radius: var(--blog-card-corner-radius);
+    --c-padding: var(--blog-card-image-padding);
+    --c-align: var(--blog-card-text-alignment);
+    --c-bg: var(--blog-card-background);
+    --c-fg: var(--blog-card-foreground);
+    --c-content: var(--blog-card-content-padding);
+    --c-bw: var(--blog-card-border-width);
+    --c-bo: var(--blog-card-border-opacity);
+    --c-sx: var(--blog-card-shadow-horizontal-offset, 0px);
+    --c-sy: var(--blog-card-shadow-vertical-offset, 0px);
+    --c-sb: var(--blog-card-shadow-blur-radius, 0px);
+    --c-so: var(--blog-card-shadow-opacity);
+  }
+  .hcms-card {
+    --radius-card: var(--c-radius, var(--media-radius, 0));
+    border-radius: var(--c-radius, 0);
+    padding: var(--c-padding, 0px);
+    background: var(--c-bg, transparent);
+    color: var(--c-fg, inherit);
+    text-align: var(--c-align, start);
+    border: var(--c-bw, 0px) solid
+      color-mix(
+        in srgb,
+        var(--color-text, var(--color-on-surface)) calc(var(--c-bo, 0) * 100%),
+        transparent
+      );
+    box-shadow: var(--c-sx) var(--c-sy) var(--c-sb)
+      color-mix(
+        in srgb,
+        var(--color-shadow, var(--color-on-surface)) calc(var(--c-so, 0) * 100%),
+        transparent
+      );
+  }
+  .hcms-card__info {
+    padding: var(--c-content, 0px);
+  }
+  .hcms-card__info :where(.flex) {
+    justify-content: var(--c-align, flex-start);
+  }
+
+  /* Media (media_*) on images/videos that use the shared media radius. */
+  .hcms-media {
+    border: var(--media-border-width, 0px) solid
+      color-mix(
+        in srgb,
+        var(--color-text, var(--color-on-surface)) calc(var(--media-border-opacity, 0) * 100%),
+        transparent
+      );
+    box-shadow: var(--media-shadow-horizontal-offset, 0px) var(--media-shadow-vertical-offset, 0px)
+      var(--media-shadow-blur-radius, 0px)
+      color-mix(
+        in srgb,
+        var(--color-shadow, var(--color-on-surface)) calc(var(--media-shadow-opacity, 0) * 100%),
+        transparent
+      );
+  }
+
+  /* Content containers (text_boxes_*): text boxes over banners/slides. */
+  .hcms-text-box {
+    border-radius: var(--text-boxes-radius, 0px);
+    border: var(--text-boxes-border-width, 0px) solid
+      color-mix(
+        in srgb,
+        var(--color-text, var(--color-on-surface)) calc(var(--text-boxes-border-opacity, 0) * 100%),
+        transparent
+      );
+    box-shadow: var(--text-boxes-shadow-horizontal-offset, 0px)
+      var(--text-boxes-shadow-vertical-offset, 0px) var(--text-boxes-shadow-blur-radius, 0px)
+      color-mix(
+        in srgb,
+        var(--color-shadow, var(--color-on-surface))
+          calc(var(--text-boxes-shadow-opacity, 0) * 100%),
+        transparent
+      );
+  }
+
+  /* Dropdowns and pop-ups (popup_*). */
+  :is(.nav-dropdown-inner, .hcms-popup) {
+    --hcms-popup-shadow: var(--popup-shadow-horizontal-offset, 0px)
+      var(--popup-shadow-vertical-offset, 0px) var(--popup-shadow-blur-radius, 0px)
+      color-mix(
+        in srgb,
+        var(--color-shadow, var(--color-on-surface)) calc(var(--popup-shadow-opacity) * 100%),
+        transparent
+      );
+    border-radius: var(--popup-corner-radius, var(--radius-lg));
+    border: var(--popup-border-width, 0px) solid
+      color-mix(
+        in srgb,
+        var(--color-text, var(--color-on-surface)) calc(var(--popup-border-opacity, 0) * 100%),
+        transparent
+      );
+    box-shadow: var(--hcms-popup-shadow, var(--shadow));
+  }
+}
+
+/* Badges (badge_position, badge_corner_radius; sale/sold-out schemes via --color-badge-*). */
+.hcms-badge {
+  border-radius: var(--badge-corner-radius, 9999px);
+  inset-block: var(--badge-inset-block, auto 0.5rem);
+  inset-inline: var(--badge-inset-inline, 0.5rem auto);
+}
+
+/* Drawers (drawer_*). */
+:is(.drawer-right, .drawer-left) {
+  --hcms-drawer-shadow: var(--drawer-shadow-horizontal-offset, 0px)
+    var(--drawer-shadow-vertical-offset, 0px) var(--drawer-shadow-blur-radius, 0px)
+    color-mix(
+      in srgb,
+      var(--color-shadow, var(--color-on-surface)) calc(var(--drawer-shadow-opacity) * 100%),
+      transparent
+    );
+  box-shadow: var(--hcms-drawer-shadow, var(--shadow-xl));
+}
+.drawer-right {
+  border-inline-start: var(--drawer-border-width, 0px) solid
+    color-mix(
+      in srgb,
+      var(--color-text, var(--color-on-surface)) calc(var(--drawer-border-opacity, 0) * 100%),
+      transparent
+    );
+}
+.drawer-left {
+  border-inline-end: var(--drawer-border-width, 0px) solid
+    color-mix(
+      in srgb,
+      var(--color-text, var(--color-on-surface)) calc(var(--drawer-border-opacity, 0) * 100%),
+      transparent
+    );
+}
+
+/* Animations: hover lift (animations_hover_elements). Reveal on scroll and section image effects
+ * are CSS scroll-driven animations in `@hcms/sections` `sections.css` ("Native motion"). Motion
+ * only when the shopper allows it. */
+@layer components {
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) {
+    :is(.hcms-card, .button-primary, .button-secondary, .button-outline) {
+      transition:
+        transform 0.3s var(--ease-ui),
+        box-shadow 0.3s var(--ease-ui);
+    }
+    :is(.hcms-card, .button-primary, .button-secondary, .button-outline):hover {
+      /* No fallback: unset = invalid = no transform (no stacking context). `motion_intensity:
+       * expressive` lifts 1.5x (`--hcms-motion`). */
+      transform: translateY(calc(var(--hover-lift) * var(--hcms-motion, 1)))
+        scale(var(--hover-scale));
+    }
+  }
+}
