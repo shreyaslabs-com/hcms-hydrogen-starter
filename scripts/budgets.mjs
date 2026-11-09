@@ -51,22 +51,23 @@ const HYDRATE_APP_KB = flag('--max-hydrate-ours');
 /** ADR 011: before hydration + deferred section chunks, our code (loose gate, ratchet down only). */
 const PAGE_APP_KB = flag('--max-page-ours');
 /**
- * ADR 011 ratchet: before-hydration ceilings for our code per route (measured + 3 KB on
- * 9 Nov 2026, ratchet down only); `--max-hydrate-ours` stays the global ceiling.
+ * ADR 011 ratchet: before-hydration ceilings for our code per route (measured + 3 KB, the worst
+ * of the default/electronics/beauty/pro presets; last ratchet 9 Nov 2026 after the loader map's
+ * static export picks; ratchet down only); `--max-hydrate-ours` stays the global ceiling.
  */
 const ROUTE_HYDRATE_APP_KB = {
-  '/': 62,
-  '/products/slides': 69,
-  '/products/sweatpants': 79,
+  '/': 61,
+  '/products/slides': 67,
+  '/products/sweatpants': 75,
   '/collections/men': 74,
-  '/collections': 69,
+  '/collections': 60,
   '/search?q=shirt': 76,
-  '/cart': 50,
-  '/pages/contact': 70,
-  '/blogs/news': 71,
-  '/account': 52,
-  '/account/addresses': 52,
-  '/account/orders/1': 52,
+  '/cart': 48,
+  '/pages/contact': 53,
+  '/blogs/news': 54,
+  '/account': 50,
+  '/account/addresses': 50,
+  '/account/orders/1': 50,
 };
 const ASSETS = new URL('../dist/client/', import.meta.url);
 const FRAMEWORK =
@@ -166,9 +167,9 @@ const DEPS = String.raw`(?:,__vite__mapDeps\(\[([\d,]*)\]\))?`;
 /**
  * The built loader map (`write-lazy.mjs`, compact form): an array of module loaders
  * `[()=>p(()=>import(\`./x.js\`),__vite__mapDeps([…])),…]` and packed type tables
- * `\`type,fileIndex[,export][,flags];…\``, one for sections and one for theme blocks.
+ * `\`type,fileIndex[,slot][,flags];…\``, one for sections and one for theme blocks.
  */
-// Rolldown appends `.then(e=>e.x)` when the module was merged into another chunk.
+// `.then(e=>[e.x])` = the static export pick; Rolldown appends `.then(e=>e.x)` to merged modules.
 const LOADER = String.raw`\(\)=>(?:[\w$]+\(\(\)=>)?import\(\`\./([^\`]+)\`\)(?:\.then\((?:[^()]|\([^()]*\))*\))*${DEPS}\)?`;
 const LOADER_LIST = new RegExp(String.raw`=\[((?:${LOADER},?)+)\]`);
 const PACKED_ENTRY = String.raw`[a-z0-9_-]+,\d+(?:,[\w$]*){0,2}`;

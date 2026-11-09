@@ -144,7 +144,9 @@ export default function StyleGuideRoute({ loaderData }: Route.ComponentProps) {
         <div className="sg-wrap sg-chips">
           {guide.categories.map((c) => (
             <a key={c.id} className="sg-chip" href={`#sg-${c.id}`}>
+              {editedCount(guide, c.id) ? <span className="sg-dot" aria-hidden="true" /> : null}
               {c.label}
+              {editedCount(guide, c.id) ? <span className="sr-only"> (changed)</span> : null}
             </a>
           ))}
         </div>
@@ -163,6 +165,12 @@ export default function StyleGuideRoute({ loaderData }: Route.ComponentProps) {
               <div className="sg-cat-head">
                 <h2 id={`sg-${c.id}-h`}>{c.label}</h2>
                 <p>{c.blurb}</p>
+                {editedCount(guide, c.id) ? (
+                  <p className="sg-cat-edited">
+                    <span className="sg-dot" aria-hidden="true" />
+                    {plural(editedCount(guide, c.id), 'setting')} changed in Theme settings
+                  </p>
+                ) : null}
               </div>
               <div className={`sg-cat-body${values?.length ? ' sg-cat-body--values' : ''}`}>
                 <div className={`sg-stage ${stage}`} style={STAGE_STYLE}>
@@ -177,6 +185,12 @@ export default function StyleGuideRoute({ loaderData }: Route.ComponentProps) {
     </main>
   );
 }
+
+/** Values of a category set in Theme settings (the dotted rows of its Current values). */
+const editedCount = (guide: StyleGuide, id: string) =>
+  (guide.values[id as keyof StyleGuide['values']] ?? []).filter((row) => row.edited).length;
+
+const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
 
 /** Scheme surface like a section's `schemeProps` (the first scheme = most sections' default). */
 const STAGE_STYLE: CSSProperties = {

@@ -27,6 +27,12 @@ type Loader<T> = { load: () => Promise<T> };
 /** ADR 011: the registry's gate for a deferred type (null = render it now). */
 type Wait = (type: string) => Promise<void> | null;
 
+/**
+ * Stands in for a query whose code stays on the server (loader `query` flag). The browser never
+ * runs queries; live preview only tests `query` for presence.
+ */
+const HAS_QUERY = () => null;
+
 /** Load-once cache for one kind (sections or blocks). */
 function lazyKind<T extends { component: unknown }>(
   loaders: Readonly<Record<string, Loader<T>>>,
@@ -116,9 +122,10 @@ export function createLazyRegistry(
             return loader.hydrate ?? sections.loaded(type)?.hydrate;
           },
           component: sections.component<SectionComponentProps>(type),
-          // Live preview decides whether an edit refetches data from `query` (loaded module).
+          // Live preview only checks whether a type has a `query` (an edit then refetches it on
+          // the server): official browser halves leave the code out and the loader flags it.
           get query() {
-            return sections.loaded(type)?.query;
+            return sections.loaded(type)?.query ?? (loader.query ? HAS_QUERY : undefined);
           },
         } as unknown as SectionDefinition;
         sectionDefs.set(type, def);
@@ -126,7 +133,8 @@ export function createLazyRegistry(
       return def;
     },
     getBlock(type) {
-      if (!blockLoaders[type]) return undefined;
+      const loader = blockLoaders[type];
+      if (!loader) return undefined;
       let def = blockDefs.get(type);
       if (!def) {
         def = {
@@ -134,7 +142,7 @@ export function createLazyRegistry(
           name: type,
           component: blocks.component<BlockComponentProps>(type),
           get query() {
-            return blocks.loaded(type)?.query;
+            return blocks.loaded(type)?.query ?? (loader.query ? HAS_QUERY : undefined);
           },
         } as unknown as BlockDefinition;
         blockDefs.set(type, def);

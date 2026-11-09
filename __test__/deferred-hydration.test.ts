@@ -68,3 +68,26 @@ test('lazy registry: the client definition carries the official hydrate flag', (
   assert.equal(lazy.registry.getSection('header')?.hydrate, 'eager');
   assert.equal(lazy.registry.getSection('footer')?.hydrate, undefined);
 });
+
+test('lazy registry: a flagged query exists in the browser without its code (live preview)', async () => {
+  const query = () => null;
+  const lazy = createLazyRegistry(
+    {
+      header: {
+        query: true,
+        load: async () => ({ type: 'header', component: () => null }) as never,
+      },
+      custom: { load: async () => ({ type: 'custom', component: () => null, query }) as never },
+      plain: { load: async () => ({ type: 'plain', component: () => null }) as never },
+    },
+    { menu_badge: { query: true, load: async () => ({ type: 'menu_badge' }) as never } },
+  );
+  // Before and after the module loads: present for flagged types, the module's own otherwise.
+  assert.equal(typeof lazy.registry.getSection('header')?.query, 'function');
+  assert.equal(typeof lazy.registry.getBlock('menu_badge')?.query, 'function');
+  assert.equal(lazy.registry.getSection('custom')?.query, undefined);
+  await lazy.preload(['header', 'custom', 'plain', 'menu_badge']);
+  assert.equal(typeof lazy.registry.getSection('header')?.query, 'function');
+  assert.equal(lazy.registry.getSection('custom')?.query, query);
+  assert.equal(lazy.registry.getSection('plain')?.query, undefined);
+});

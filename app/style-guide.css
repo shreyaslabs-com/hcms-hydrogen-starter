@@ -196,6 +196,13 @@
   border-radius: 50%;
   background: var(--sg-accent);
 }
+.sg-cat-head .sg-cat-edited {
+  margin-inline-start: auto;
+  font-size: 13px;
+}
+.sg-chip .sg-dot {
+  margin-inline-end: 6px;
+}
 .sg-values-note {
   margin: 12px 0 0;
   color: var(--sg-muted);

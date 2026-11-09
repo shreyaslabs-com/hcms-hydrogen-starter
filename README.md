@@ -1,11 +1,13 @@
 # HydrogenCMS storefront
 
+<!-- shared:intro -->
 This is a Shopify Hydrogen storefront that you edit in the **HydrogenCMS** app. HydrogenCMS gives
 a headless store the theme editor you know from the Online Store: templates, sections, blocks,
 theme settings, pages, menus, SEO and versions.
 
 You deploy this storefront to Shopify Oxygen **once**. After that, everything you change in the
 HydrogenCMS theme editor goes live when you publish. You don't edit code and you don't redeploy.
+<!-- /shared:intro -->
 
 - [Install HydrogenCMS](#install-hydrogencms)
 - [Deploy on Oxygen](#deploy-on-oxygen)
@@ -16,6 +18,7 @@ HydrogenCMS theme editor goes live when you publish. You don't edit code and you
 - [Custom sections](#custom-sections)
 - [Troubleshooting](#troubleshooting)
 
+<!-- shared:setup -->
 ## Install HydrogenCMS
 
 1. Install the **HydrogenCMS** app from the Shopify App Store.
@@ -197,7 +200,9 @@ Every starting theme comes with colour styles and works with every section. Pick
     </td>
   </tr>
 </table>
+<!-- /shared:setup -->
 
+<!-- shared:local-development -->
 ## Local development
 
 You don't need this to run your store. It's for developers who work on the storefront code.
@@ -238,6 +243,7 @@ Customer accounts need trusted local HTTPS: run `npm run dev:https` and open
 
 Optional variables are described in `.env.example`. `HCMS_INSTALL_URL` changes where the setup
 screen's **Install HydrogenCMS** button points.
+<!-- /shared:local-development -->
 
 ## Update the storefront
 
@@ -258,6 +264,7 @@ To take an update:
 Your published theme stays live while you update, and you can roll back from **Version history**
 in HydrogenCMS at any time.
 
+<!-- shared:reference -->
 ## Custom sections
 
 Developers can add their own sections and blocks to the theme editor. Create
@@ -296,6 +303,7 @@ your store's own data, and if that isn't available, the built-in theme. Publishi
 HydrogenCMS is back.
 
 For more help, open **Help** in the HydrogenCMS app.
+<!-- /shared:reference -->
 
 ## License
 
