@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   addToCart,
+  cartAddDestination,
   cartIdFromCookie,
   marketRedirectPrefix,
   parseBoxForm,
@@ -290,4 +291,11 @@ test('a whole box is ONE cartLinesAdd', async () => {
   assert.equal(outcome.ok, true);
   assert.equal(calls.length, 1);
   assert.equal(calls[0]?.lines.length, 2);
+});
+
+test('plain Buy now (T-2.156): checkout=1 goes to /checkout, never for a box', () => {
+  assert.equal(cartAddDestination(form({ merchandiseId: VARIANT })), '/cart');
+  assert.equal(cartAddDestination(form({ merchandiseId: VARIANT, checkout: '1' })), '/checkout');
+  assert.equal(cartAddDestination(form({ box_id: 'b', checkout: '1' })), '/cart');
+  assert.equal(cartAddDestination(form({ merchandiseId: VARIANT, checkout: 'yes' })), '/cart');
 });

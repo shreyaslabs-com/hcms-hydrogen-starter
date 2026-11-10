@@ -242,3 +242,75 @@ body:has(.drawer-left[open]) {
 .hcms-cart-disclosure[open] > summary::after {
   content: '\2212';
 }
+
+/* T-2.156 variant picker looks (block settings; defaults never add these classes). */
+@layer components {
+  .option-pill.option-pill--outline:is([aria-pressed='true'], [aria-current='true'], .is-selected) {
+    background: transparent;
+    color: inherit;
+    border-color: currentColor;
+    box-shadow: inset 0 0 0 1px currentColor;
+  }
+  .option-pill--slash {
+    background-image: linear-gradient(
+      to bottom right,
+      transparent calc(50% - 0.5px),
+      currentColor calc(50% - 0.5px),
+      currentColor calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    );
+  }
+  .hcms-swatch-tab {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2rem;
+    padding-inline: 0.75rem;
+    border: 1px solid var(--hcms-pill-border, var(--color-border));
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+  .hcms-swatch-tab:has(:checked) {
+    border-color: currentColor;
+    font-weight: 600;
+  }
+  /* The radios are visually hidden: their label shows the keyboard focus. */
+  .hcms-swatch-tab:has(:focus-visible),
+  .hcms-variant-card:has(:focus-visible) {
+    outline: 2px solid var(--color-interactive);
+    outline-offset: 2px;
+  }
+  .hcms-variant-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--hcms-pill-border, var(--color-border));
+    border-radius: var(--variant-pills-radius, var(--radius));
+    cursor: pointer;
+  }
+  .hcms-variant-card.is-selected {
+    border-color: currentColor;
+    box-shadow: inset 0 0 0 1px currentColor;
+  }
+  .hcms-variant-card:has(:disabled) {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .hcms-variant-card.is-soldout {
+    opacity: 0.7;
+  }
+  .hcms-variant-card__badge {
+    position: absolute;
+    inset-block-start: -0.625rem;
+    inset-inline-end: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1rem;
+    background: var(--color-button-primary, var(--color-interactive));
+    color: var(--color-button-primary-text, var(--color-interactive-text));
+  }
+}

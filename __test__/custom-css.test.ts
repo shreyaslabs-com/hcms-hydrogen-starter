@@ -11,6 +11,9 @@ test('theme Custom CSS (T-2.74) renders after the app stylesheets, theme fonts b
   assert.ok(links > 0 && custom > links, 'custom CSS comes after <Links /> so it wins');
   assert.ok(root.indexOf('rootData?.theme.links.map') < links, 'font links/preloads stay first');
   assert.match(root, /__html: rootData\.theme\.customCss/);
+  // T-2.166: theme Custom CSS follows the theme tokens, so it overrides them.
+  const tokens = root.indexOf('data-hcms-theme=""');
+  assert.ok(tokens > 0 && custom > tokens, 'custom CSS comes after the theme tokens');
 });
 
 test('section Custom CSS (T-2.74) is computed in the loader and passed to every renderer', () => {

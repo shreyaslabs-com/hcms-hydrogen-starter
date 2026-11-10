@@ -16,6 +16,7 @@ HCMS theme editor goes live when you publish. You don't edit code and you don't 
 - [Local development](#local-development)
 - [Update the storefront](#update-the-storefront)
 - [Custom sections](#custom-sections)
+- [Custom CSS](#custom-css)
 - [Troubleshooting](#troubleshooting)
 
 <!-- shared:setup -->
@@ -276,6 +277,15 @@ Developer tokens, `npx hcms dev` (previewing sections in the editor before you d
 coming in a later version. Until then, deploy, then Sync.
 
 The full guide: [Build your own sections and blocks](./docs/developers/custom-sections.md).
+
+## Custom CSS
+
+Like the Online Store, HCMS has a **Custom CSS** box in Theme settings (whole theme, up to 50 KB) and on every section
+(that section only, up to 10 KB). Publishers and admins can edit it; it is rendered on the server, no code deploy needed.
+Write it against the stable class names and data attributes we keep across updates (section root
+`[data-hcms-section-id]`, block root `[data-hcms-block-id]`, `.hcms-card`, `.hcms-price`, `.hcms-badge`,
+`.hcms-button`, `.hcms-header__logo` …); anything else may change. The list and the rules:
+[Custom CSS](./docs/developers/custom-css.md).
 
 ## Troubleshooting
 

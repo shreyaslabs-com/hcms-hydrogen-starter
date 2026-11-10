@@ -227,3 +227,11 @@ function messages(result: CartMutationResult | null | undefined): string[] {
   const list = (result?.userErrors ?? []).map((e) => e.message).filter(Boolean);
   return list.length ? list : ['Could not add to cart'];
 }
+
+/**
+ * Where a successful no-JS add goes (T-2.156): `checkout=1` (plain "Buy now", never a box) →
+ * `/checkout` (Hydrogen's handler redirects it to the cart's checkout), else the cart page.
+ */
+export function cartAddDestination(form: FormData): '/checkout' | '/cart' {
+  return form.get('checkout') === '1' && !form.has('box_id') ? '/checkout' : '/cart';
+}

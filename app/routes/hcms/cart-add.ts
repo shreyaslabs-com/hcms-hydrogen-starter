@@ -2,6 +2,7 @@ import { gql } from '@shopify/hydrogen';
 
 import {
   addToCart,
+  cartAddDestination,
   marketRedirectPrefix,
   parseBoxForm,
   safeReturnTo,
@@ -85,7 +86,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     });
     const headers = new Headers({ 'Cache-Control': 'no-store' });
     if (outcome.ok) {
-      headers.set('Location', `${prefix}/cart`);
+      // T-2.156 plain "Buy now" (`checkout=1`): Hydrogen's `/checkout` → the cart's checkout.
+      headers.set('Location', `${prefix}${cartAddDestination(form)}`);
       if (outcome.setCookie) headers.append('Set-Cookie', outcome.setCookie);
     } else {
       headers.set('Location', parsed.returnTo);

@@ -411,7 +411,8 @@
             "b0": {
               "type": "title",
               "settings": {
-                "show_vendor": false
+                "show_vendor": false,
+                "append_variant_to_title": false
               }
             },
             "b1": {
@@ -428,7 +429,19 @@
               "type": "variant_picker",
               "settings": {
                 "picker_type": "button",
-                "swatch_shape": "circle"
+                "swatch_shape": "circle",
+                "cards_columns": "2",
+                "cards_columns_mobile": "1",
+                "cards_subtitle": "custom.subtitle",
+                "cards_badge": "custom.badge",
+                "cards_show_savings": true,
+                "cards_show_unit_price": true,
+                "selected_style": "filled",
+                "soldout_style": "strike",
+                "label_style": "default",
+                "hide_unavailable": false,
+                "show_value_images": false,
+                "swatch_source": "none"
               }
             },
             "b3": {
@@ -447,6 +460,8 @@
               "type": "buy_buttons",
               "settings": {
                 "show_dynamic_checkout": true,
+                "buy_now_type": "dynamic",
+                "buttons_layout": "stacked",
                 "show_gift_card_recipient": true,
                 "show_purchase_options": true,
                 "sticky_mobile": false,
