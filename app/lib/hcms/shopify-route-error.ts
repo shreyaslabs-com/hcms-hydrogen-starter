@@ -25,12 +25,28 @@ function backHref(request: Request): string {
   return '/cart';
 }
 
+/**
+ * `message ← cause ← cause…` (≤ 4 levels). Hydrogen's "SFAPI request failed" hides why
+ * (network error, timeout, Shopify 5xx/throttle), so the log keeps the causes too.
+ */
+export function describeError(error: unknown): string {
+  const parts: string[] = [];
+  let current: unknown = error;
+  for (let depth = 0; current != null && depth < 4; depth++) {
+    if (current instanceof Error) {
+      const status = (current as { status?: unknown }).status;
+      parts.push(`${current.message}${typeof status === 'number' ? ` (status ${status})` : ''}`);
+      current = (current as { cause?: unknown }).cause;
+    } else {
+      parts.push(String(current));
+      break;
+    }
+  }
+  return parts.join(' ← ');
+}
+
 export function shopifyRouteErrorResponse(request: Request, error: unknown): Response {
-  console.error(
-    `Shopify route ${new URL(request.url).pathname} failed: ${
-      error instanceof Error ? error.message : String(error)
-    }`,
-  );
+  console.error(`Shopify route ${new URL(request.url).pathname} failed: ${describeError(error)}`);
   const headers = { 'Cache-Control': 'no-store', 'Retry-After': '5' };
   const navigation =
     request.headers.get('Sec-Fetch-Mode') === 'navigate' ||

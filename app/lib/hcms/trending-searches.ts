@@ -1,7 +1,7 @@
 /**
  * Trending searches (T-2.72): the search drawer's empty state shows the terms of the first enabled
- * `trending-searches` section (@hcms/sections) in a layout group (header, footer, overlay) whose
- * `show_in_search` is on. Pure, so `node:test` can load it; read once by the root loader.
+ * `trending-searches` section (@hcms/sections) whose `show_in_search` is on: a layout group's first
+ * (header, footer, overlay), else the search template's (where the starting themes put it). Pure, so `node:test` can load it; read once by the root loader.
  * Limits match the section's (`TRENDING_MAX_TERMS`, 60 characters per term).
  */
 export type SearchPromo = {
@@ -63,9 +63,18 @@ export function trendingSearchesFrom(
   document: unknown,
   resolveImage: ResolveImage = () => null,
 ): TrendingSearches | null {
-  const groups = (document as { groups?: Record<string, Group> } | null)?.groups ?? {};
-  for (const name of ['header', 'footer', 'overlay']) {
-    const group = groups[name];
+  const doc = document as {
+    groups?: Record<string, Group>;
+    templates?: Record<string, Group>;
+  } | null;
+  const groups = doc?.groups ?? {};
+  const places: (Group | undefined)[] = [
+    groups.header,
+    groups.footer,
+    groups.overlay,
+    doc?.templates?.search,
+  ];
+  for (const group of places) {
     for (const id of group?.order ?? []) {
       const section = group?.sections?.[id];
       if (section?.type !== 'trending-searches' || section.disabled) continue;

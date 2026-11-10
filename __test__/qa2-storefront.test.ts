@@ -16,7 +16,7 @@ registerHooks({
 
 const { loadRootLayout, fallbackRootLayout } = await import('../app/lib/root-layout.ts');
 const { withBudget } = await import('../app/lib/hcms/budget.ts');
-const { shopifyRouteErrorResponse, SHOPIFY_ROUTE_ERROR_MESSAGE } =
+const { shopifyRouteErrorResponse, SHOPIFY_ROUTE_ERROR_MESSAGE, describeError } =
   await import('../app/lib/hcms/shopify-route-error.ts');
 const { groupCartLines } = await import('../app/lib/hcms/cart-boxes.ts');
 const { cartSavings } = await import('../app/lib/hcms/cart-savings.ts');
@@ -146,6 +146,20 @@ const bundleLine = {
     component('location', '729.95', '691.70'),
   ],
 };
+
+describe('Shopify route error log keeps the cause', () => {
+  it('lists the cause chain with statuses', () => {
+    const inner = Object.assign(new Error('Service Unavailable'), { status: 503 });
+    const outer = new Error('SFAPI request failed', {
+      cause: new Error('fetch failed', { cause: inner }),
+    });
+    assert.equal(
+      describeError(outer),
+      'SFAPI request failed ← fetch failed ← Service Unavailable (status 503)',
+    );
+    assert.equal(describeError('boom'), 'boom');
+  });
+});
 
 describe('Build a box cart row (S2-5) and upsell (S2-10)', () => {
   it('merged box row strikes the components list-price total', () => {

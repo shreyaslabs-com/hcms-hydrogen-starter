@@ -45,6 +45,18 @@ test('trending searches (T-2.72): first enabled section in a layout group', () =
   assert.equal(trendingSearchesFrom(doc({ settings: {} }))?.heading, null);
 });
 
+test('trending searches: falls back to the search template (where starting themes put it)', () => {
+  const inSearch = { templates: { search: doc({}).groups.header } };
+  assert.deepEqual(trendingSearchesFrom(inSearch)?.terms, ['Vitamin C', 'Onion & oil']);
+  // A layout group's section wins over the search template's.
+  const both = {
+    groups: doc({ blocks: { x: { type: 'term', settings: { term: 'Oud' } } }, block_order: ['x'] })
+      .groups,
+    templates: inSearch.templates,
+  };
+  assert.deepEqual(trendingSearchesFrom(both)?.terms, ['Oud']);
+});
+
 test('trending searches: terms are URL-encoded', () => {
   assert.equal(trendingSearchHref('a&b <c>'), '/search?q=a%26b%20%3Cc%3E');
 });

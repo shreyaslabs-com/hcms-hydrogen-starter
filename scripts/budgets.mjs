@@ -59,9 +59,9 @@ const ROUTE_HYDRATE_APP_KB = {
   '/': 61,
   '/products/slides': 67,
   '/products/sweatpants': 75,
-  '/collections/men': 74,
+  '/collections/men': 71, // T-2.154: collection/search schema halves stay on the server
   '/collections': 60,
-  '/search?q=shirt': 76,
+  '/search?q=shirt': 73,
   '/cart': 48,
   '/pages/contact': 53,
   '/blogs/news': 54,

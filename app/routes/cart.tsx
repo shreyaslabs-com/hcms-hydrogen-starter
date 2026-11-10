@@ -16,6 +16,7 @@ const CART_SLOTS: RouteSlotValue = {
     showSignIn,
     installments,
     emptyState,
+    layout,
   }) => (
     <CartPageBody
       showDynamicCheckout={showDynamicCheckout}
@@ -26,6 +27,7 @@ const CART_SLOTS: RouteSlotValue = {
       showSignIn={showSignIn ?? false}
       installments={installments}
       emptyState={emptyState}
+      layout={layout}
     />
   ),
 };

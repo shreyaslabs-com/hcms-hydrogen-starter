@@ -21,7 +21,24 @@ export type CartPageLinesProps = {
   showFreeShipping: boolean;
   showSignIn: boolean;
   installments?: ((total: { amount: string; currencyCode: string }) => ReactNode) | undefined;
+  /** T-2.154 `main-cart` `cart_layout: table`. */
+  layout?: 'table' | undefined;
 };
+
+/** Desktop column names for the table layout (rows repeat them as sr-only text). */
+function TableHead() {
+  return (
+    <div
+      aria-hidden="true"
+      className="text-on-surface-secondary border-border hidden grid-cols-[minmax(0,1fr)_8rem_10rem_8rem] gap-4 border-b pb-3 text-xs font-medium tracking-wide uppercase md:grid"
+    >
+      <span>Product</span>
+      <span>Price</span>
+      <span>Quantity</span>
+      <span className="text-end">Total</span>
+    </div>
+  );
+}
 
 /**
  * The cart page with lines (rows, summary, checkout), split from `CartPageBody` so the empty cart
@@ -34,29 +51,48 @@ export function CartPageLines({
   showFreeShipping,
   showSignIn,
   installments,
+  layout,
 }: CartPageLinesProps) {
   const cart = useCart((state) => state.data);
   const lines = cart.lines.nodes;
   const showSavings = useCartDisplay()?.showSavings ?? true;
+  const table = layout === 'table';
+  const list = (
+    <ul role="list" className="divide-border divide-y">
+      {groupCartLines(lines).map((row) =>
+        row.kind === 'box' ? (
+          <CartBoxRow key={row.key} box={row} emptyCartFocusId="cart-page-title" />
+        ) : (
+          <CartLineItem
+            key={row.line.id}
+            imageClassName={table ? 'size-20 sm:size-24' : 'size-24 sm:size-32'}
+            line={row.line}
+            emptyCartFocusId="cart-page-title"
+            renderOffers={(l, pending) => renderLineOffers(l, pending, showSavings)}
+            {...(table ? { table: true } : {})}
+          />
+        ),
+      )}
+    </ul>
+  );
   return (
-    <div {...{ [CART_LINES_ATTRIBUTE]: '' }} className="grid gap-8 lg:grid-cols-[2fr_1fr]">
-      <ul role="list" className="divide-border divide-y">
-        {groupCartLines(lines).map((row) =>
-          row.kind === 'box' ? (
-            <CartBoxRow key={row.key} box={row} emptyCartFocusId="cart-page-title" />
-          ) : (
-            <CartLineItem
-              key={row.line.id}
-              imageClassName="size-24 sm:size-32"
-              line={row.line}
-              emptyCartFocusId="cart-page-title"
-              renderOffers={(l, pending) => renderLineOffers(l, pending, showSavings)}
-            />
-          ),
-        )}
-      </ul>
+    <div
+      {...{ [CART_LINES_ATTRIBUTE]: '' }}
+      className={table ? 'grid gap-8' : 'grid gap-8 lg:grid-cols-[2fr_1fr]'}
+    >
+      {table ? (
+        <div>
+          <TableHead />
+          {list}
+        </div>
+      ) : (
+        list
+      )}
       {/* Summary (templates review, Nov 9): total and Checkout first, extras after, closed. */}
-      <aside className="border-border h-fit rounded border p-4" aria-label="Cart summary">
+      <aside
+        className={`border-border h-fit rounded border p-4${table ? ' w-full lg:ms-auto lg:max-w-sm' : ''}`}
+        aria-label="Cart summary"
+      >
         {showFreeShipping ? (
           <CartFreeShippingBar className="border-border mb-4 border-b pb-4" />
         ) : null}

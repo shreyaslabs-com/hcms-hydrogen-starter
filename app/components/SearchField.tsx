@@ -1,5 +1,7 @@
 import { Suspense, lazy, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useRouteLoaderData } from 'react-router';
+
+import type { TrendingSearches } from '~/lib/hcms/trending-searches';
 
 import { useLocalePath } from '~/components/LocaleLink';
 import { HeaderIcon } from '~/components/HeaderControls';
@@ -14,7 +16,8 @@ const SearchDropdown = lazy(() =>
  * Header search field (`search_style: field`, replica P1-8). A real `GET /search` form, so it works
  * without JS. The suggestions panel (and its code) loads on the first focus/pointer; it opens under
  * the field while typing. Arrow Down moves into the panel, Escape closes and returns to the field,
- * a link click or focus leaving closes it.
+ * a link click or focus leaving closes it. With nothing typed it only opens when the merchant set
+ * up an empty state (trending terms, popular products or a promo); never a blank box.
  */
 export function SearchField() {
   const navigate = useNavigate();
@@ -25,7 +28,17 @@ export function SearchField() {
   // The panel is wider than the field: it grows toward the middle of the screen, so a field on the
   // start side of the header (logo centred) doesn't push it off the edge (SF-5).
   const [alignStart, setAlignStart] = useState(false);
-  const openPanel = () => {
+  const trending = useRouteLoaderData<{ trendingSearches?: TrendingSearches | null }>(
+    'root',
+  )?.trendingSearches;
+  const hasEmptyState = Boolean(
+    trending && (trending.terms.length > 0 || trending.popular || trending.promo),
+  );
+  const openPanel = (event?: { currentTarget: HTMLInputElement }) => {
+    if (event && !event.currentTarget.value.trim() && !hasEmptyState) {
+      setOpen(false);
+      return;
+    }
     const rect = wrapper.current?.getBoundingClientRect();
     if (rect) {
       const startHalf = (rect.left + rect.right) / 2 < window.innerWidth / 2;
@@ -101,10 +114,10 @@ export function SearchField() {
           aria-expanded={open}
           aria-controls={PANEL_ID}
           data-testid="search-field"
-          className="focus-visible:outline-accent h-10 w-56 rounded-full border border-current/30 bg-transparent ps-10 pe-3 text-sm text-[color:var(--color-text,var(--color-on-surface))] placeholder:text-current placeholder:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 lg:w-72"
-          onFocus={() => {
+          className="hcms-search-field__input focus-visible:outline-accent h-10 w-56 rounded-full border border-current/30 bg-transparent ps-10 pe-3 text-sm text-[color:var(--color-text,var(--color-on-surface))] placeholder:text-current placeholder:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 lg:w-72"
+          onFocus={(event) => {
             setArmed(true);
-            openPanel();
+            openPanel(event);
           }}
           onInput={openPanel}
         />

@@ -393,8 +393,12 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     // Search drawer empty state (T-2.72): terms of the layout groups' `trending-searches` section.
     trendingSearches: (() => {
       const { document } = context.get(documentContext);
+      // Published snapshots carry every file; a preview draft has none, so the layout groups'
+      // fetched files fill in (a promo image used only in the search template still shows
+      // after publish, not in preview).
+      const assets = { ...(document.assets ?? {}), ...(groups.assets ?? {}) };
       return trendingSearchesFrom(document, (value) => {
-        const file = resolveFile(value, document.assets ?? {});
+        const file = resolveFile(value, assets);
         return file?.kind === 'image' ? file.url : null;
       });
     })(),

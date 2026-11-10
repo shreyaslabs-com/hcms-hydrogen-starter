@@ -55,6 +55,18 @@ body {
     font-weight: var(--font-heading-weight, 700);
     font-style: var(--font-heading-style, normal);
   }
+  /* Theme settings › Typography › Heading letter spacing (T-2.154); unset = the font's own. */
+  :is(
+    .type-display,
+    .type-heading-xl,
+    .type-heading-lg,
+    .type-heading-md,
+    .type-heading-sm,
+    .richtext :is(h1, h2, h3, h4, h5, h6),
+    .rte :is(h1, h2, h3, h4)
+  ) {
+    letter-spacing: var(--font-heading-letter-spacing, normal);
+  }
 }
 
 /* Colour-scheme buttons (Dawn `button` / `button_label`). Schemes set `--color-button` and
@@ -267,11 +279,15 @@ main [data-hcms-section-id]
     background: var(--c-bg, transparent);
     color: var(--c-fg, inherit);
     text-align: var(--c-align, start);
+    /* `--c-bc`: a section's card border colour (T-2.154 `card_border_color`). */
     border: var(--c-bw, 0px) solid
-      color-mix(
-        in srgb,
-        var(--color-text, var(--color-on-surface)) calc(var(--c-bo, 0) * 100%),
-        transparent
+      var(
+        --c-bc,
+        color-mix(
+          in srgb,
+          var(--color-text, var(--color-on-surface)) calc(var(--c-bo, 0) * 100%),
+          transparent
+        )
       );
     box-shadow: var(--c-sx) var(--c-sy) var(--c-sb)
       color-mix(

@@ -19,7 +19,10 @@ export function CartPageBody({
   showSignIn = false,
   installments,
   emptyState,
+  layout,
 }: {
+  /** T-2.154 `main-cart` `cart_layout: table`. */
+  layout?: 'table' | undefined;
   showDynamicCheckout?: boolean;
   showDiscounts?: boolean;
   showNote?: boolean;
@@ -68,6 +71,7 @@ export function CartPageBody({
           showFreeShipping={showFreeShipping}
           showSignIn={showSignIn}
           installments={installments}
+          layout={layout}
         />
       </Suspense>
       {showUpsell ? (
