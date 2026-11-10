@@ -9,7 +9,7 @@ import { useEffect, useRef } from 'react';
 import { useCart, useCartActions } from '~/lib/cart';
 import { cartContentSignature } from '~/lib/hcms/cart-refresh';
 import { cartSavings, toMilli, fromMilli } from '~/lib/hcms/cart-savings';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 
 import { useCartDisplay } from './CartOffers';
 
@@ -119,6 +119,7 @@ export function CartTrustRow({ icons }: { icons: TrustIcon[] }) {
 
 /** Footer total with the compare ("was") total struck through when there are savings. */
 export function CartCompareTotal() {
+  const formatPrice = useFormatPrice();
   const display = useCartDisplay();
   const lines = useCart((state) => state.data.lines.nodes);
   const cost = useCart((state) => state.data.cost);

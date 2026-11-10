@@ -12,7 +12,7 @@ import {
 } from '~/components/account/AccountShared';
 import { Link, useLocalePath } from '~/components/LocaleLink';
 import { formatStatus, orderPath } from '~/lib/hcms/account';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 import type { loader, ProfileActionData } from '~/routes/account';
 
 export type AccountData = Awaited<ReturnType<typeof loader>>;
@@ -198,6 +198,7 @@ function DefaultAddress({ customer }: { customer: Customer }) {
 }
 
 function Orders({ orders }: { orders: Customer['orders'] }) {
+  const formatPrice = useFormatPrice();
   const navigation = useNavigation();
   const localize = useLocalePath();
   const isPaging =

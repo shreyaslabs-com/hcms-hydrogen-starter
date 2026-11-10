@@ -23,7 +23,7 @@ import {
   otherAttributes,
   type CartGifts as CartGiftsConfig,
 } from '~/lib/hcms/cart-gifts';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 
 type Money = { amount: string; currencyCode: string };
 /** Gift-wrap price per market path + variant, fetched once per page (App Store 1.1.9). */
@@ -57,6 +57,7 @@ const BUTTON =
   'rounded-button button-outline min-h-11 self-start px-4 text-sm disabled:cursor-not-allowed';
 
 function CartGiftWrap({ variantId }: { variantId: string }) {
+  const formatPrice = useFormatPrice();
   const s = useStrings();
   const localize = useLocalePath();
   const { formProps, register } = useCartForm();

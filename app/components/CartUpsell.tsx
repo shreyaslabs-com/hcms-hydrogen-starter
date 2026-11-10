@@ -16,7 +16,7 @@ import {
   type UpsellProduct,
 } from '~/lib/hcms/upsell';
 import { shopifyImageUrl } from '~/lib/image';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 
 type UpsellData = {
   complementary?: UpsellProduct[];
@@ -135,6 +135,7 @@ function UpsellRail({
 const PAGE_ITEMS = 4;
 
 function UpsellCard({ item, compact }: { item: UpsellItem; compact: boolean }) {
+  const formatPrice = useFormatPrice();
   const cartId = useCart((state) => state.data.id);
   const ready = useCart(
     (state) => !state.loading && !('readyPromise' in state && state.readyPromise),

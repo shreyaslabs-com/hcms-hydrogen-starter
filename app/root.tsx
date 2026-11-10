@@ -632,6 +632,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
         shopInfo={loaderData.shopInfo}
         integrations={loaderData.integrations}
         currencyCode={loaderData.theme.flags.currencyCode}
+        hideDecimals={loaderData.theme.flags.hideDecimals}
       >
         <HcmsStringsProvider strings={loaderData.themeStrings}>
           {loaderData.rum ? (

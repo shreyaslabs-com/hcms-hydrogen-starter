@@ -12,7 +12,7 @@ import { CART_LINES_ATTRIBUTE } from '~/components/cart-lines-slot';
 import { SignInWithShop } from '~/components/SignInWithShop';
 import { useCart } from '~/lib/cart';
 import { groupCartLines } from '~/lib/hcms/cart-boxes';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 
 export type CartPageLinesProps = {
   showDynamicCheckout: boolean;
@@ -53,6 +53,7 @@ export function CartPageLines({
   installments,
   layout,
 }: CartPageLinesProps) {
+  const formatPrice = useFormatPrice();
   const cart = useCart((state) => state.data);
   const lines = cart.lines.nodes;
   const showSavings = useCartDisplay()?.showSavings ?? true;

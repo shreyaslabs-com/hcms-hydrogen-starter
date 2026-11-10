@@ -8,7 +8,7 @@ import { useRouteLoaderData } from 'react-router';
 import { type CartLineView } from '~/components/CartLineItem';
 import { useCart } from '~/lib/cart';
 import { cartSavings, fromMilli, lineCompareAtMilli, lineDiscounts } from '~/lib/hcms/cart-savings';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 
 export function useCartDisplay(): CartDisplay | null {
   return useRouteLoaderData<{ cartDisplay?: CartDisplay | null }>('root')?.cartDisplay ?? null;
@@ -16,6 +16,19 @@ export function useCartDisplay(): CartDisplay | null {
 
 /** Line price block: struck compare-at total, discounted total, discount labels ("BUY2 −₹100"). */
 export function renderLineOffers(line: CartLineView, pending: boolean, showSavings: boolean) {
+  return <LineOffers line={line} pending={pending} showSavings={showSavings} />;
+}
+
+function LineOffers({
+  line,
+  pending,
+  showSavings,
+}: {
+  line: CartLineView;
+  pending: boolean;
+  showSavings: boolean;
+}) {
+  const formatPrice = useFormatPrice();
   const compare = showSavings ? lineCompareAtMilli(line) : null;
   const discounts = showSavings ? lineDiscounts(line) : [];
   const currency = line.cost.totalAmount.currencyCode;
@@ -48,6 +61,7 @@ export function renderLineOffers(line: CartLineView, pending: boolean, showSavin
 
 /** "You save ₹X" for the footer (null when nothing is saved or the merchant turned it off). */
 export function CartSavingsLine() {
+  const formatPrice = useFormatPrice();
   const display = useCartDisplay();
   const lines = useCart((state) => state.data.lines.nodes);
   const cost = useCart((state) => state.data.cost);

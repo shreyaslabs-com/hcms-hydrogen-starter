@@ -3,7 +3,7 @@ import { useLocation } from 'react-router';
 import { AccountGateView, AddressLines, dateFormat } from '~/components/account/AccountShared';
 import { shopifyImageUrl } from '~/lib/image';
 import { formatStatus } from '~/lib/hcms/account';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 import type { OrderData } from '~/routes/account-order';
 
 type Order = Extract<OrderData, { status: 'signed-in' }>['order'];
@@ -104,6 +104,7 @@ function Status({ order }: { order: Order }) {
 }
 
 function LineItems({ order, showImages }: { order: Order; showImages: boolean }) {
+  const formatPrice = useFormatPrice();
   return (
     <section aria-labelledby="order-items-heading">
       <h2 id="order-items-heading" className="type-heading-md mb-4">
@@ -176,6 +177,7 @@ function discountLabel(node: Order['discountApplications']['nodes'][number]): st
 }
 
 function Totals({ order }: { order: Order }) {
+  const formatPrice = useFormatPrice();
   const rows: { label: string; value: Money | string | null | undefined; strong?: boolean }[] = [
     { label: 'Subtotal', value: order.subtotal },
     ...order.discountApplications.nodes.map((node) => ({

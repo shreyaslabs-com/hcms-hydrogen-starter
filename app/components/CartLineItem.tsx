@@ -5,7 +5,7 @@ import { Link } from '~/components/LocaleLink';
 import { useCart, useCartForm } from '~/lib/cart';
 import { lineOptionText, lineProductPath } from '~/lib/hcms/cart-line';
 import { shopifyImageUrl } from '~/lib/image';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 
 export type CartLineView = {
   id: string;
@@ -49,6 +49,7 @@ export function CartLineItem({
   /** T-2.154 cart page table layout (columns from md up). */
   table?: boolean;
 }) {
+  const formatPrice = useFormatPrice();
   const { formProps, register } = useCartForm();
   const pendingLines = useCart((state) => state.pending.lines);
   const lineError = useCart((state) => state.errors.lines.get(line.id));

@@ -1,7 +1,7 @@
 import { gql, type StorefrontApi } from '@shopify/hydrogen';
 import { Link } from '~/components/LocaleLink';
 
-import { compareMoney, formatPrice } from '~/lib/money';
+import { compareMoney, useFormatPrice } from '~/lib/money';
 
 export const PRODUCT_CARD_FRAGMENT = gql(`
   fragment ProductCard on Product {
@@ -50,6 +50,7 @@ type ProductCardProps = {
 };
 
 export function ProductCard({ product, priority = false }: ProductCardProps) {
+  const formatPrice = useFormatPrice();
   const primaryImage = product.featuredImage ?? product.images.nodes[0] ?? null;
   const hoverImage = product.images.nodes[1] ?? null;
   const price = product.priceRange.minVariantPrice;

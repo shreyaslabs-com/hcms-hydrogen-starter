@@ -15,7 +15,7 @@ import {
 } from '~/lib/cart-drawer';
 import { groupCartLines } from '~/lib/hcms/cart-boxes';
 import type { CartEmpty } from '~/lib/hcms/cart-display';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 
 import { publishCartViewed, publishCheckoutStarted } from './AnalyticsTrackers';
 import { CartBoxRow } from './CartBoxRow';
@@ -162,6 +162,7 @@ function CartLines({ open }: { open: boolean }) {
 }
 
 function CartFooter() {
+  const formatPrice = useFormatPrice();
   const cart = useCart((state) => state.data);
   const pending = useCart((state) => state.pending);
   const revalidating = useCart((state) => 'revalidating' in state && state.revalidating === true);

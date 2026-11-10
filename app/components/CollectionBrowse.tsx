@@ -18,7 +18,7 @@ import { FacetValues, type FacetOption } from '~/components/hcms/FacetValues';
 import { bindFacetBar, nextPageSectionData } from '~/lib/hcms/facet-bar';
 import { facetDisplay, swatchPaint } from '~/lib/hcms/filter-display';
 
-import { DEFAULT_MONEY_LOCALE, formatPrice } from '~/lib/money';
+import { DEFAULT_MONEY_LOCALE, useFormatPrice } from '~/lib/money';
 
 export type SortOption = {
   label: string;
@@ -156,7 +156,11 @@ function money(amount: number, currencyCode: string): MoneyV2 {
   return { amount: String(amount), currencyCode };
 }
 
-function describeFilter(filter: ProductFilter, currencyCode: string): string {
+function describeFilter(
+  filter: ProductFilter,
+  currencyCode: string,
+  formatPrice: (money: MoneyV2) => string,
+): string {
   if (filter.available != null) return filter.available ? 'In stock' : 'Out of stock';
   if (filter.productType) return filter.productType;
   if (filter.productVendor) return filter.productVendor;
@@ -664,6 +668,7 @@ export function ActiveFilterChips({
   currencyCode: string;
 }) {
   const state: CollectionState = useCollection();
+  const formatPrice = useFormatPrice();
   if (state.filters.length === 0) return null;
 
   const currentParams = serializeCollectionParams(state);
@@ -675,7 +680,7 @@ export function ActiveFilterChips({
       aria-label="Active filters"
     >
       {state.filters.map((filter, index) => {
-        const label = describeFilter(filter, currencyCode);
+        const label = describeFilter(filter, currencyCode, formatPrice);
         const removal = getFilterRemovalUrl(currentParams, filter);
         const to = buildPathWithRemoval(basePath, removal);
 

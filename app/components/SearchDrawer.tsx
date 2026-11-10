@@ -12,7 +12,7 @@ import { useNavigate, useRouteLoaderData } from 'react-router';
 import { Link, useLocalePath } from '~/components/LocaleLink';
 
 import { SEARCH_DRAWER_ID, closeSearchDrawer } from '~/lib/cart-drawer';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 import { describeSuggestions } from '~/lib/predictive-search';
 import { routeTemplates } from '~/lib/route-templates';
 import { trendingSearchHref, type TrendingSearches } from '~/lib/hcms/trending-searches';
@@ -301,6 +301,7 @@ function ProductRow({
   image: RowImage;
   price: Money | null;
 }) {
+  const formatPrice = useFormatPrice();
   return (
     <div className="hover:bg-surface-secondary flex items-center gap-2 rounded p-1 motion-safe:transition-colors">
       <Link

@@ -14,7 +14,7 @@ import { type CartLineView } from '~/components/CartLineItem';
 import { useCart, useCartActions, useCartForm } from '~/lib/cart';
 import { boxDiscounted, type CartBox } from '~/lib/hcms/cart-boxes';
 import { fromMilli, toMilli } from '~/lib/hcms/cart-savings';
-import { formatPrice } from '~/lib/money';
+import { useFormatPrice } from '~/lib/money';
 
 export function CartBoxRow({
   box,
@@ -23,6 +23,7 @@ export function CartBoxRow({
   box: CartBox<CartLineView>;
   emptyCartFocusId: string;
 }) {
+  const formatPrice = useFormatPrice();
   const { formProps, register } = useCartForm();
   const { refresh } = useCartActions();
   const pendingLines = useCart((state) => state.pending.lines);

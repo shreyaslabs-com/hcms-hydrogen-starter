@@ -16,7 +16,7 @@ import { PaymentMethodIcon } from '~/components/PaymentMethodIcon';
 import { JsonLd } from '~/components/JsonLd';
 import { SignInWithShop } from '~/components/SignInWithShop';
 import { withCurrencyCode } from '~/lib/hcms/currency-code';
-import { formatPrice } from '~/lib/money';
+import { DEFAULT_MONEY_LOCALE, PriceFormatProvider, formatPrice } from '~/lib/money';
 import type { StorefrontShop } from '~/lib/storefront-shop';
 
 /**
@@ -27,11 +27,14 @@ export function HcmsAppAdapter({
   shopInfo,
   integrations,
   currencyCode = false,
+  hideDecimals = false,
   children,
 }: {
   shopInfo: StorefrontShop;
   /** Theme setting `currency_code_enabled` (T-2.65): append the ISO code to section prices. */
   currencyCode?: boolean;
+  /** Theme setting `money_hide_decimals` (T-2.157): whole amounts without `.00` (all prices). */
+  hideDecimals?: boolean;
   /** App integrations enabled in Embeds (T-2.8): vendor blocks render only for these. */
   integrations?: readonly string[];
   children: ReactNode;
@@ -88,7 +91,11 @@ export function HcmsAppAdapter({
       ...productSlots,
       ModelViewer,
       formatMoney: (money, options) => {
-        const formatted = formatPrice(money as Parameters<typeof formatPrice>[0]);
+        const formatted = formatPrice(
+          money as Parameters<typeof formatPrice>[0],
+          DEFAULT_MONEY_LOCALE,
+          { hideDecimals },
+        );
         return (options?.currencyCode ?? currencyCode)
           ? withCurrencyCode(formatted, money.currencyCode)
           : formatted;
@@ -119,9 +126,14 @@ export function HcmsAppAdapter({
       analytics: hcmsAnalytics,
       integrations: integrations ?? [],
     }),
-    [shopInfo, localizePath, integrations, currencyCode],
+    [shopInfo, localizePath, integrations, currencyCode, hideDecimals],
   );
-  return <AppComponentsProvider value={value}>{children}</AppComponentsProvider>;
+  const priceFormat = useMemo(() => ({ hideDecimals }), [hideDecimals]);
+  return (
+    <AppComponentsProvider value={value}>
+      <PriceFormatProvider value={priceFormat}>{children}</PriceFormatProvider>
+    </AppComponentsProvider>
+  );
 }
 
 /**
