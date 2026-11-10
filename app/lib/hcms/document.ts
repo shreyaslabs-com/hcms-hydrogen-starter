@@ -2,6 +2,8 @@
  * Page pipeline, part 1 (T-1.2.12): which Theme Document renders this request.
  * Live: HCMS read API when configured (T-1.4.9, pointer cached 10 s / SWR 60 s) → metaobject
  * mirror (cached 10 s / SWR 60 s, "nothing published" included) → bundled last-known-good. Preview: the editor's draft, falling back to the live chain if it fails.
+ * Licence lease (T-2.150): a pointer whose `licensed_until` has passed (checked against the
+ * request time, server only) is refused, so the bundled default theme renders.
  */
 import {
   MIRROR_CACHE_SECONDS,
@@ -10,8 +12,10 @@ import {
   createBundledSource,
   createMirrorSource,
   loadDraft,
+  licenseStatus,
   loadThemeDocument,
   type ApiPointer,
+  type LicenseState,
   type LoadResult,
   type MirrorQueryData,
   type PreviewState,
@@ -51,6 +55,8 @@ export type DocumentState = {
   draftError?: string;
   /** Password gate from the live pointer (T-2.21); null = open. */
   gate?: StorefrontGate | null;
+  /** Licence lease (T-2.150) for `/__hcms/health`: expired = the mirror was refused → bundled. */
+  license?: LicenseState;
   /** Preview only: the store's saved components (T-2.86) for the Component library page. */
   components?: SavedComponent[];
 };
@@ -89,7 +95,10 @@ export async function loadPageDocument({
   }
 
   const runWithCache = createRunWithCache({ cache, waitUntil });
+  const requestTime = Date.now();
+  const now = () => requestTime;
   const mirror = createMirrorSource({
+    now,
     // The SDK passes its validated MIRROR_QUERY string; the client injects nothing here.
     query: (query) =>
       storefrontClient.graphql(query as never) as Promise<{
@@ -110,6 +119,7 @@ export async function loadPageDocument({
     sources.unshift(
       createApiSource({
         ...api,
+        now,
         cacheRead: async (load) => {
           const { data } = await runWithCache(
             { key: ['hcms', 'api-pointer', storeKey], strategy: Cache.short(MIRROR_CACHE_SECONDS) },
@@ -125,6 +135,7 @@ export async function loadPageDocument({
     sources.unshift(
       createCdnSource({
         ...cdn,
+        now,
         cacheRead: async (load) => {
           const { data } = await runWithCache(
             { key: ['hcms', 'cdn-pointer', storeKey], strategy: Cache.short(MIRROR_CACHE_SECONDS) },
@@ -143,6 +154,7 @@ export async function loadPageDocument({
       source: result.tier,
       failures: result.failures,
       gate: result.gate ?? null,
+      license: licenseStatus(result, requestTime),
       ...(draftError ? { draftError } : {}),
     };
   } catch {

@@ -29,7 +29,7 @@ registered, so your store doesn't change until you copy them into `app/sections/
 - [Accessibility and right-to-left languages](#accessibility-and-right-to-left-languages)
 - [Test your sections](#test-your-sections)
 - [Ship it: deploy, then Sync](#ship-it-deploy-then-sync)
-- [Preview without deploying: `hcms dev`](#preview-without-deploying-hcms-dev)
+- [Coming in a later version: `hcms dev` and `hcms push`](#coming-in-a-later-version-hcms-dev-and-hcms-push)
 - [Troubleshooting](#troubleshooting)
 
 ## Quick start
@@ -120,7 +120,7 @@ registry (and `/__hcms/manifest`) and by the browser's lazy loader map automatic
 and block schema. Then run `npm run typecheck`, and `npm run dev` to see the storefront locally.
 
 **3. Ship it.** Deploy the storefront (merge to your production branch), then open HydrogenCMS ›
-**Storefront** and select **Sync**. "Promo banner" now appears in **Add section** and in the
+**Settings › Storefront** and select **Sync** on the Sections row. "Promo banner" now appears in **Add section** and in the
 Component library under **Developer**.
 
 ## How a section works
@@ -681,8 +681,8 @@ The theme editor offers exactly the sections the **deployed** storefront can ren
 
 1. Deploy: merge your change to the branch Shopify deploys to Oxygen (or run `npm run deploy`).
 2. Wait until the deployment finishes.
-3. In HydrogenCMS, open **Storefront** and select **Sync** in the Sections card. Sync reads
-   `/__hcms/manifest` from your production storefront and reports what's new.
+3. In HydrogenCMS, open **Settings › Storefront** and select **Sync** on the Sections row. Sync
+   reads `/__hcms/manifest` from your production storefront and reports what's new.
 
 HydrogenCMS also checks the deployed storefront on its own. When it finds sections that aren't
 synced yet, the status bar shows "Your storefront has 1 new section (Promo banner). Sync so the
@@ -695,12 +695,21 @@ After Sync:
   rendered with the merchant's theme. Merchants can filter by **Developer**.
 - Merchants can save configured copies of it as their own components.
 
+This is the supported way to get custom sections into the editor: no token or extra setup is
+needed. To check a section before you deploy, run it on your local server (`npm run dev`) and
+use `npx hcms dev --offline`, which re-validates the registry every time you save a file.
+
+## Coming in a later version: `hcms dev` and `hcms push`
+
+> **Coming in a later version.** Developer tokens, `npx hcms push` and `npx hcms dev` (online)
+> aren't available yet: the **Developer tokens** block doesn't show in Settings and the CLI API
+> answers 404. Use [deploy, then Sync](#ship-it-deploy-then-sync). The rest of this section
+> describes how they will work.
+
 `npx hcms push` uploads the manifest straight from your machine (it validates first;
 `--dry-run` shows what would change). It replaces the synced manifest, so only use it for code
 that is already deployed: sections that aren't deployed show a placeholder in the editor and
 render nothing on the live store. The next Sync replaces it with the deployed manifest anyway.
-
-## Preview without deploying: `hcms dev`
 
 While you build, `hcms dev` shows your work-in-progress sections in the merchant's editor without
 touching what is published.
@@ -736,7 +745,7 @@ when the work is done.
 | What you see                                                                                       | Why, and what to do                                                                                                                                                                                                                 |
 | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The section isn't in **Add section** or the Component library.                                    | Deploy, then **Sync**. In the Component library, also check that the section may go on the home page or a regular page (`enabledOn`/`disabledOn`) and that its type doesn't start with `main-`.                                |
-| Editor preview: "Section … isn't in this storefront's code yet".                                   | The editor knows the section (Sync or `hcms dev`), but the storefront the preview shows doesn't have the code. Deploy it.                                                                                                       |
+| Editor preview: "Section … isn't in this storefront's code yet".                                   | The editor knows the section (after Sync), but the storefront the preview shows doesn't have the code. Deploy it.                                                                                                       |
 | The section renders, then disappears when the page finishes loading. | The browser has no loader for it: the file isn't directly in `app/sections/custom/` (theme blocks: `custom/blocks/`), or the section was added to `sectionDefinitions` by hand. Move the file into the folder and remove the manual import. |
 | Startup error: `app/sections/custom/… defines type "…", but the file name says "…"` (or "exports no section or block definition"). | Each file in `custom/` holds exactly one definition named after the file. Rename the file to the type, and move helpers into a subfolder. |
 | Editor preview: "Block … isn't in this storefront's code".                                         | A section-local block was passed to `HcmsBlocks` (render it yourself), or the theme block's file isn't in `app/sections/custom/blocks/`.                                                                     |

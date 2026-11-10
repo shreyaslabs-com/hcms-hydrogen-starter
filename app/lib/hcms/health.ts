@@ -3,6 +3,8 @@
  * only which tier served, which tiers failed, and whether the HCMS settings are present.
  * `preview` = a preview token on this request verified, which proves `HCMS_PREVIEW_SECRET`
  * matches the admin's (the onboarding check signs one).
+ * `license` (T-2.150): `expired` = the licence lease on the live pointer has ended (the app was
+ * uninstalled), so the storefront shows its bundled default theme; `unknown` = no lease seen.
  */
 export type HealthInput = {
   source: string;
@@ -14,6 +16,7 @@ export type HealthInput = {
     HCMS_PUBLIC_KEY?: string | undefined;
   };
   previewVerified: boolean;
+  license?: 'ok' | 'expired' | 'unknown' | undefined;
   now?: Date;
 };
 
@@ -23,6 +26,7 @@ export function healthReport({
   sdkVersion,
   env,
   previewVerified,
+  license = 'unknown',
   now = new Date(),
 }: HealthInput) {
   // NOT_FOUND = nothing published yet (new store): expected, not an outage.
@@ -39,6 +43,7 @@ export function healthReport({
       publicKey: Boolean(env.HCMS_PUBLIC_KEY),
     },
     preview: previewVerified,
+    license,
     time: now.toISOString(),
   };
 }

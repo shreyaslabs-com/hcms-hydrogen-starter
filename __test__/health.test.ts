@@ -34,3 +34,18 @@ test('health: nothing published yet is "unpublished", not degraded', () => {
     'ok',
   );
 });
+
+test('health: licence lease state (T-2.150), unknown by default', () => {
+  const expired = healthReport({
+    ...base,
+    source: 'bundled',
+    failures: [{ tier: 'mirror', error: { code: 'FORBIDDEN', message: 'Lease has ended' } }],
+    env: {},
+    previewVerified: false,
+    license: 'expired',
+  });
+  assert.equal(expired.license, 'expired');
+  const plain = { ...base, source: 'mirror', failures: [], env: {}, previewVerified: false };
+  assert.equal(healthReport(plain).license, 'unknown');
+  assert.equal(healthReport({ ...plain, license: 'ok' }).license, 'ok');
+});

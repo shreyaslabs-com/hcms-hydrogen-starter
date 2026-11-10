@@ -268,8 +268,12 @@ in HCMS at any time.
 ## Custom sections
 
 Developers can add their own sections and blocks to the theme editor. Create
-`app/sections/custom/` and put one file per section in it; working examples are in `app/sections/examples/`. After you deploy, select
-**Sync** in HCMS and the new sections show up under **Add section**.
+`app/sections/custom/` and put one file per section in it; working examples are in `app/sections/examples/`. Deploy the
+storefront, then select **Sync** in HCMS (Settings › Storefront › Sections) and the new sections show up under **Add section**.
+No token or extra setup is needed.
+
+Developer tokens, `npx hcms dev` (previewing sections in the editor before you deploy) and `npx hcms push` are
+coming in a later version. Until then, deploy, then Sync.
 
 The full guide: [Build your own sections and blocks](./docs/developers/custom-sections.md).
 

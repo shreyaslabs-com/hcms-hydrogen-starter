@@ -24,6 +24,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     sdkVersion: SDK_VERSION,
     env,
     previewVerified,
+    license: state.license,
   });
   const url = new URL(request.url);
   if (url.searchParams.get(REPORT_PARAM) === '1')
