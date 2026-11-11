@@ -6,6 +6,8 @@
 @import './hcms-styles.css';
 /* Official sections' component CSS + product icon masks: CSS, not JS (T-2.118, D-26 budget). */
 @import '../node_modules/@hcms/sections/dist/sections.css';
+/* Section/block Style + device visibility (T-2.168/T-2.169): fixed rules, CSS variables only. */
+@import '../node_modules/@hcms/hydrogen/dist/style.css';
 
 /* Official HCMS sections ship Tailwind classes in their package build (D-20). */
 @source '../node_modules/@hcms/sections/dist';
@@ -188,6 +190,57 @@ body:has(.drawer-left[open]) {
   border-inline-start: 3px solid var(--color-border);
   padding-inline-start: 1em;
   color: var(--color-on-surface-secondary);
+}
+
+/* T-2.160 floating "Sort | Filter" bar (phones, `mobile_filter_layout: floating`): a pill fixed
+ * above the bottom edge (and above the mobile bottom navigation, `--hcms-bottom-offset`). */
+.hcms-browse-bar {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: calc(1rem + var(--hcms-bottom-offset, 0px) + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  /* display: `flex lg:hidden` utilities on the element (an unlayered display would beat them). */
+  inline-size: fit-content;
+  margin-inline: auto;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.16);
+}
+.hcms-browse-bar__divider {
+  inline-size: 1px;
+  block-size: 1.25rem;
+  background-color: var(--color-border);
+}
+/* Its sort sheet: a bottom sheet `<dialog>` (slides up; instant under reduced motion). */
+.hcms-sort-sheet {
+  inset-block: auto 0;
+  inset-inline: 0;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  max-block-size: 80dvh;
+  margin: 0;
+  padding: 1rem;
+  border-radius: 1rem 1rem 0 0;
+  overflow-y: auto;
+}
+.hcms-sort-sheet::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hcms-sort-sheet {
+    transition:
+      transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
+      overlay 250ms allow-discrete,
+      display 250ms allow-discrete;
+  }
+  @starting-style {
+    .hcms-sort-sheet[open] {
+      transform: translateY(100%);
+    }
+  }
 }
 
 /* Collection filters (T-2.118, Online Store-like): applied-count badge on the Filters button,

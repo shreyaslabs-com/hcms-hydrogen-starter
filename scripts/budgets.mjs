@@ -172,6 +172,11 @@ const DEPS = String.raw`(?:,__vite__mapDeps\(\[([\d,]*)\]\))?`;
 // `.then(e=>[e.x])` = the static export pick; Rolldown appends `.then(e=>e.x)` to merged modules.
 const LOADER = String.raw`\(\)=>(?:[\w$]+\(\(\)=>)?import\(\`\./([^\`]+)\`\)(?:\.then\((?:[^()]|\([^()]*\))*\))*${DEPS}\)?`;
 const LOADER_LIST = new RegExp(String.raw`=\[((?:${LOADER},?)+)\]`);
+/**
+ * Product page block loaders (`@hcms/sections/lazy-product`, Nov 11): the shared map indexes them
+ * after its own modules and imports this chunk (the product route has it in its initial chunks).
+ */
+const PRODUCT_GROUP = new RegExp(String.raw`import\(\`\./(lazy-product-[^\`]+)\`\)${DEPS}`);
 const PACKED_ENTRY = String.raw`[a-z0-9_-]+,\d+(?:,[\w$]*){0,2}`;
 const PACKED_TABLE = new RegExp(
   String.raw`[\`"](${PACKED_ENTRY}(?:;${PACKED_ENTRY}){2,})[\`"]`,
@@ -192,6 +197,20 @@ const PRODUCT_FORM = new RegExp(
 const CART_LINES = new RegExp(
   String.raw`import\(\`\./(CartPageLines-[^\`]+)\`\)(?:\.then\((?:[^()]|\([^()]*\))*\))*${DEPS}`,
 );
+/**
+ * Optional UI slots (`components/hcms/ui-slots.ts`): slot name → chunk of its module, loaded
+ * before hydrating when an element marked `data-hcms-slot="<name>"` is outside deferred sections.
+ */
+const SLOT_CHUNKS = {
+  media: 'HcmsMedia',
+  locale: 'LocaleSwitcher',
+  geo: 'MarketSuggestionBanner',
+  error: 'ErrorPages',
+};
+const slotImport = (chunk) =>
+  new RegExp(
+    String.raw`import\(\`\./(${chunk}-[^\`]+)\`\)(?:\.then\((?:[^()]|\([^()]*\))*\))*${DEPS}`,
+  );
 
 /**
  * The page's sections in the server HTML (`data-hcms-section-type`), each with its ADR 011 marker
@@ -239,32 +258,70 @@ export function hydrationTypes(html) {
 }
 
 /**
+ * Optional UI slots (mirrors `entry.client`): `eager` = slots marked outside every deferred
+ * section, `deferred` = the ones marked only inside deferred sections.
+ */
+export function slotPlacement(html) {
+  const spans = sectionSpans(html);
+  const eager = new Set();
+  const deferred = new Set();
+  for (const m of html.matchAll(/<[a-z][^>]*\bdata-hcms-slot="([a-z]+)"[^>]*>/g)) {
+    if (!(m[1] in SLOT_CHUNKS)) continue;
+    const owner = spans.find((s) => s.start < m.index && m.index < s.end);
+    (owner && owner.defer !== null ? deferred : eager).add(m[1]);
+  }
+  for (const slot of eager) deferred.delete(slot);
+  return { eager, deferred };
+}
+
+/**
  * Chunks for these section / theme-block types, read from the built loader map
  * (`__vite__mapDeps` = the module + the deps Vite preloads with it), plus the product form when
  * a product section is among them and (`cartLines`) the cart lines chunk.
  */
-function chunkUrls(types, chunks, { cartLines = false } = {}) {
+function chunkUrls(
+  types,
+  chunks,
+  { cartLines = false, slots = new Set(), productGroup = null } = {},
+) {
   const wanted = new Set();
   let loaders = 0;
-  for (const text of chunks) {
-    const table = /m\.f=\[([^\]]*)\]/
+  /** `__vite__mapDeps` file table of a chunk. */
+  const depTable = (text) =>
+    /m\.f=\[([^\]]*)\]/
       .exec(text)?.[1]
       .match(/"[^"]+"/g)
       ?.map((s) => s.slice(1, -1));
-    const add = (file, deps) => {
-      wanted.add(`/assets/${file}`);
-      for (const i of deps ? deps.split(',') : []) if (table?.[i]) wanted.add(`/${table[i]}`);
-    };
+  const adder = (table) => (file, deps) => {
+    wanted.add(`/assets/${file}`);
+    for (const i of deps ? deps.split(',') : []) if (table?.[i]) wanted.add(`/${table[i]}`);
+  };
+  const loaderList = (text) => {
     const list = LOADER_LIST.exec(text)?.[1];
-    const modules = list ? [...list.matchAll(new RegExp(LOADER, 'g'))] : [];
+    return list ? [...list.matchAll(new RegExp(LOADER, 'g'))] : [];
+  };
+  const product = productGroup
+    ? { modules: loaderList(productGroup), add: adder(depTable(productGroup)) }
+    : null;
+  for (const text of chunks) {
+    const add = adder(depTable(text));
+    const modules = loaderList(text);
+    const group = PRODUCT_GROUP.exec(text);
     if (modules.length)
       for (const table of text.matchAll(PACKED_TABLE))
         for (const entry of table[1].split(';')) {
           const [type, index] = entry.split(',');
-          const mod = modules[Number(index)];
+          const i = Number(index);
+          // Product page blocks: the group chunk (+ its deps), then the block's own module.
+          const mod = i < modules.length ? modules[i] : product?.modules[i - modules.length];
           if (!mod) continue;
           loaders += 1;
-          if (types.has(type)) add(mod[1], mod[2]);
+          if (!types.has(type)) continue;
+          if (i < modules.length) add(mod[1], mod[2]);
+          else {
+            if (group) add(group[1], group[2]);
+            product?.add(mod[1], mod[2]);
+          }
         }
     const custom = new Map();
     for (const m of text.matchAll(CUSTOM)) {
@@ -276,6 +333,10 @@ function chunkUrls(types, chunks, { cartLines = false } = {}) {
     if (form && PRODUCT_SECTION_TYPES.some((t) => types.has(t))) add(form[1], form[2]);
     const lines = CART_LINES.exec(text);
     if (lines && cartLines) add(lines[1], lines[2]);
+    for (const slot of slots) {
+      const m = slotImport(SLOT_CHUNKS[slot]).exec(text);
+      if (m) add(m[1], m[2]);
+    }
   }
   if (types.size && !loaders) throw new Error('No lazy section loaders found in the route chunks');
   return [...wanted].filter((p) => p.endsWith('.js')).map((p) => new URL(p, ORIGIN));
@@ -286,11 +347,18 @@ function chunkUrls(types, chunks, { cartLines = false } = {}) {
  * section/theme-block modules, the product form with an eager product section, the cart lines
  * chunk on a cart page with lines. `later` = what ADR 011 loads after hydration (minus those).
  */
-function preHydrationUrls(html, chunks) {
+function preHydrationUrls(html, chunks, productGroup) {
   const { eager, deferred } = hydrationTypes(html);
-  const before = chunkUrls(eager, chunks, { cartLines: /\bdata-hcms-cart-lines\b/.test(html) });
+  const slots = slotPlacement(html);
+  const before = chunkUrls(eager, chunks, {
+    cartLines: /\bdata-hcms-cart-lines\b/.test(html),
+    slots: slots.eager,
+    productGroup,
+  });
   const seen = new Set(before.map((u) => u.href));
-  const later = chunkUrls(deferred, chunks).filter((u) => !seen.has(u.href));
+  const later = chunkUrls(deferred, chunks, { slots: slots.deferred, productGroup }).filter(
+    (u) => !seen.has(u.href),
+  );
   return { before, later };
 }
 
@@ -380,9 +448,14 @@ try {
     const initial = scriptUrls(html);
     for (const url of initial) await gzipKb(url);
     const seen = new Set(initial.map((u) => u.href));
+    // The product page block loader map (its own chunk): read it to resolve those types.
+    const groupFile = initial.map((u) => PRODUCT_GROUP.exec(texts.get(u.href))?.[1]).find(Boolean);
+    const groupUrl = groupFile ? new URL(`/assets/${groupFile}`, ORIGIN) : null;
+    if (groupUrl) await gzipKb(groupUrl);
     const { before, later } = preHydrationUrls(
       html,
       initial.map((u) => texts.get(u.href)),
+      groupUrl ? texts.get(groupUrl.href) : null,
     );
     const urls = [...initial, ...before.filter((u) => !seen.has(u.href))];
     const awaited = new Set(urls.map((u) => u.href));

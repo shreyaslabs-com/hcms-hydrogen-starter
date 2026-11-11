@@ -5,10 +5,12 @@ import {
   useAppComponents,
   type RefetchResult,
   type RefetchSection,
+  type RenderContextValue,
 } from '@hcms/hydrogen';
 import type { Asset, Template } from '@hcms/schema';
 import { use, useCallback, useMemo, type ReactNode } from 'react';
 
+import { CartConditionsSlot } from '~/components/hcms/cart-conditions-slot';
 import { useLocalePath } from '~/components/LocaleLink';
 import { livePreview, loadLivePreview } from '~/lib/hcms/live-preview';
 import type { AppWidgets } from '~/lib/hcms/judgeme';
@@ -63,7 +65,7 @@ function WithAppWidgets({ widgets, children }: { widgets: AppWidgets; children: 
 }
 
 function LiveTemplatePage({ page }: { page: TemplatePage }) {
-  const { useLivePage } = livePreview() ?? use(loadLivePreview());
+  const { useLivePage, instanceStyle } = livePreview() ?? use(loadLivePreview());
   const localize = useLocalePath();
   const refetch = useCallback<RefetchSection>(
     async ({ id, section }) => {
@@ -96,12 +98,21 @@ function LiveTemplatePage({ page }: { page: TemplatePage }) {
     <>
       {/* Tells `entry.client.tsx` to load the live-edit module before hydrating. */}
       <meta name="hcms-preview" content="1" />
-      <TemplateView page={page} rendered={live} />
+      {/* Style/visibility edits (T-2.168/T-2.169) show at once: attributes computed here. */}
+      <TemplateView page={page} rendered={live} styleOf={instanceStyle} />
     </>
   );
 }
 
-function TemplateView({ page, rendered }: { page: TemplatePage; rendered: Rendered }) {
+function TemplateView({
+  page,
+  rendered,
+  styleOf,
+}: {
+  page: TemplatePage;
+  rendered: Rendered;
+  styleOf?: RenderContextValue['styleOf'];
+}) {
   return (
     <HcmsRenderProvider
       value={{
@@ -111,6 +122,7 @@ function TemplateView({ page, rendered }: { page: TemplatePage; rendered: Render
         preview: page.preview,
         route: page.route,
         sectionCss: page.sectionCss,
+        ...(styleOf ? { styleOf } : {}),
         onError: reportSectionError,
       }}
     >
@@ -118,6 +130,7 @@ function TemplateView({ page, rendered }: { page: TemplatePage; rendered: Render
       <meta name="hcms-template" content={page.name} />
       {/* T-2.132: only the first section's images may be priority (preloaded, eager). */}
       <HcmsSections container={rendered.template} placement={{ template: page.name }} />
+      <CartConditionsSlot sectionCss={page.sectionCss} />
     </HcmsRenderProvider>
   );
 }

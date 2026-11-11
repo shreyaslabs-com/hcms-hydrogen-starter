@@ -3,7 +3,14 @@
  * → section/block queries + bindings + missing files → ONE Storefront query → plain values.
  */
 import {
+  CONDITIONS_REQUEST,
+  applyConditions,
   collectFileGids,
+  conditionData,
+  conditionsRequest,
+  dropRemovedData,
+  hasConditions,
+  needsCustomer,
   collectSectionRequests,
   collectSourceContexts,
   fileNodesRequest,
@@ -18,6 +25,7 @@ import {
   sourceRequests,
   unwrapReferenceData,
   validateDefinitions,
+  type ConditionContext,
   type SectionCss,
   type SectionDataRequest,
   type SectionQueryArgs,
@@ -28,6 +36,8 @@ import {
 import type { Asset, SectionGroup, Template } from '@hcms/schema';
 import type { RouterContextProvider } from 'react-router';
 
+import { customerAccountContext, customerSignedIn } from '~/lib/customer-account';
+import { conditionsContext, recordConditions } from '~/lib/hcms/conditions';
 import { documentContext } from '~/lib/hcms/document';
 import type { AppWidgets } from '~/lib/hcms/judgeme';
 import { loadJudgemeWidgets } from '~/lib/hcms/judgeme.server';
@@ -93,7 +103,7 @@ export type LoadOptions = {
 /** One batched Storefront query for every section in `containers`. */
 export async function loadSections<T extends Container>(
   context: Readonly<RouterContextProvider>,
-  containers: T[],
+  input: T[],
   resource: TemplateResource & { type?: string } = {},
   options: LoadOptions = {},
 ): Promise<LoadedSections<T>> {
@@ -107,6 +117,24 @@ export async function loadSections<T extends Container>(
         ...(resource.handle ? { handle: resource.handle } : {}),
       }
     : null;
+  const preview = context.get(previewContext) !== null;
+  // Conditional visibility (T-2.170), phase 1: what the request already knows (date, country,
+  // customer, collection handle). Shoppers: a definite "hide" drops the instance before its data
+  // is collected. The product/metafield answers ride in the same batched query (phase 2 below).
+  let containers = input;
+  let conditions: ConditionContext | null = null;
+  if (hasConditions(input)) {
+    const { market } = context.get(marketContext);
+    conditions = {
+      now: Date.now(),
+      country: market.country,
+      resource: sectionResource,
+      customer: needsCustomer(input)
+        ? await customerSignedIn(context.get(customerAccountContext))
+        : undefined,
+    };
+    if (!preview) containers = applyConditions(input, conditions).containers;
+  }
   // `$source` / `{{token}}` bindings: one request per resource context, same batched query.
   const templateResource: SourceResource | null = sectionResource
     ? {
@@ -141,6 +169,8 @@ export async function loadSections<T extends Container>(
   );
   const files = fileNodesRequest(missing);
   if (files) requests[FILES_REQUEST] = files;
+  const conditionsQuery = conditions ? conditionsRequest(containers, sectionResource) : null;
+  if (conditionsQuery) requests[CONDITIONS_REQUEST] = conditionsQuery;
 
   const soft = options.softTimeoutMs;
   const result = await resolveData(requests, (query, variables) => {
@@ -167,7 +197,7 @@ export async function loadSections<T extends Container>(
   const { market } = context.get(marketContext);
   const locale = `${market.language.toLowerCase()}-${market.country}`;
   const boundAssets: Record<string, Asset> = {};
-  const resolved = containers.map((container) => {
+  let resolved = containers.map((container) => {
     const bound = resolveBindings(container as Template, result.data, {
       templateResource,
       locale,
@@ -177,9 +207,25 @@ export async function loadSections<T extends Container>(
     return { ...container, sections: bound.template.sections } as T;
   });
 
+  // Conditional visibility, phase 2: hidden instances are emptied and their data dropped (shoppers),
+  // or kept with a "Hidden" badge (preview); cart rules get their browser attribute.
+  let conditionEntries: SectionCss = {};
+  let data = result.data;
+  if (conditions) {
+    const applied = applyConditions(
+      resolved,
+      { ...conditions, data: conditionData(result.data[CONDITIONS_REQUEST]) },
+      { preview },
+    );
+    resolved = applied.containers;
+    conditionEntries = applied.entries;
+    data = dropRemovedData(result.data, [...applied.removed, CONDITIONS_REQUEST]);
+    if (!preview) recordConditions(context.get(conditionsContext), applied);
+  }
+
   return {
     containers: resolved,
-    data: result.data,
+    data,
     assets: {
       ...boundAssets,
       ...mergeFileNodes(
@@ -188,8 +234,9 @@ export async function loadSections<T extends Container>(
           ?.nodes,
       ),
     },
-    preview: context.get(previewContext) !== null,
-    sectionCss: sectionStyles(containers),
+    preview,
+    // Hidden instances (removed above) get no style/code entries.
+    sectionCss: { ...sectionStyles(conditions ? resolved : containers), ...conditionEntries },
     ...(variantSources ? { variantSources } : {}),
   };
 }

@@ -16,6 +16,7 @@ export function MarketSuggestionBanner({ suggestion }: { suggestion: MarketSugge
   };
   return (
     <aside
+      data-hcms-slot="geo"
       aria-label="Country suggestion"
       className="bg-surface-secondary text-on-surface border-border border-b"
     >

@@ -34,7 +34,7 @@ export function LocaleSwitcher({ placement = 'above' }: { placement?: 'above' | 
   const path = stripLocalePrefix(location.pathname);
 
   return (
-    <details className="relative">
+    <details data-hcms-slot="locale" className="relative">
       <summary className="type-body-sm text-on-surface cursor-pointer list-none rounded py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current">
         <span className="sr-only">Country/region: </span>
         {current

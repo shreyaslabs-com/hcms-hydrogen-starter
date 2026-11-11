@@ -2,7 +2,7 @@ import { Link } from '~/components/LocaleLink';
 
 import type { StorefrontShop } from '~/lib/storefront-shop';
 
-import { LocaleSwitcher } from './LocaleSwitcher';
+import { LocaleSwitcherSlot as LocaleSwitcher } from './hcms/ui-slots';
 import { PaymentMethodIcon } from './PaymentMethodIcon';
 
 const linkClass =

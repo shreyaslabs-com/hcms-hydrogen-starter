@@ -11,6 +11,22 @@ Only **publishers and admins** can change it; editors see it read-only. Saving n
 it goes live with the next publish and rolls back with the version. Custom CSS is yours to
 maintain after HCMS updates: write it against the stable hooks below.
 
+## Try Style first
+
+Most custom CSS requests (font size per device, uppercase, letter spacing, padding/margin per
+device, border, radius, shadow, scheme background or gradient, alignment, max width, hide on
+mobile/desktop) are covered by the **Style** area on every section and block
+(help: [Styling sections and blocks](../help/styling-sections-and-blocks.md)). Style values come
+from fixed scales, follow the colour scheme, survive HCMS updates and need no publisher role.
+
+How it renders: the instance's `style` / `visibility` (schema `InstanceStyleSchema`) become CSS
+variables (`--hs-*`) + `data-hcms-style` tokens on the section wrapper (`#hcms-section-<id>`) or
+on the block root (via `attributes`), and `data-hcms-visibility="desktop|mobile"`. The fixed rules
+live in `@hcms/hydrogen/style.css` (`dist/style.css`); a custom storefront imports it once in its
+app CSS. Attributes are computed in the loader (`sectionStyles` → `style:<path>` entries), so the
+page bundle only looks them up. Custom block components must spread `attributes` on their root
+element (including its `style`) for block Style to apply.
+
 ## How it is rendered
 
 - Rendered on the server as `<style>`; no JavaScript is added. The preview updates after each

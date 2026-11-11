@@ -52,6 +52,7 @@ export function HcmsVideo({
     return (
       <button
         type="button"
+        data-hcms-slot="media"
         onClick={() => setPlaying(true)}
         className={`group relative block overflow-hidden bg-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${className ?? ''}`}
         style={{ ...(ratio ? { aspectRatio: String(ratio) } : {}), ...style }}
@@ -76,6 +77,7 @@ export function HcmsVideo({
   return (
     <video
       {...rest}
+      data-hcms-slot="media"
       className={className}
       style={{ ...(ratio && mode !== 'autoplay' ? { aspectRatio: String(ratio) } : {}), ...style }}
       poster={posterUrl}
@@ -130,7 +132,10 @@ export function ExternalVideo({
   const provider = video.provider === 'youtube' ? 'YouTube' : 'Vimeo';
 
   return (
-    <div className={`relative aspect-video w-full overflow-hidden bg-black ${className ?? ''}`}>
+    <div
+      data-hcms-slot="media"
+      className={`relative aspect-video w-full overflow-hidden bg-black ${className ?? ''}`}
+    >
       {playing ? (
         <iframe
           src={videoEmbedUrl(video)}

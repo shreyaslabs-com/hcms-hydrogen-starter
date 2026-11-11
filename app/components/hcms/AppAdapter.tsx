@@ -8,10 +8,13 @@ import { AccountButton, CartButton, SearchButton } from '~/components/HeaderCont
 import { useRouteSlots } from '~/components/hcms/RouteSlots';
 import { productSlots } from '~/components/product/product-slots';
 import { HcmsImage } from '~/components/hcms/HcmsImage';
-import { ModelViewer } from '~/components/hcms/ModelViewer';
-import { ExternalVideo, HcmsVideo } from '~/components/hcms/HcmsVideo';
+import {
+  ExternalVideoSlot as ExternalVideo,
+  HcmsVideoSlot as HcmsVideo,
+  LocaleSwitcherSlot as LocaleSwitcher,
+  ModelViewerSlot as ModelViewer,
+} from '~/components/hcms/ui-slots';
 import { Link, useLocalePath } from '~/components/LocaleLink';
-import { LocaleSwitcher } from '~/components/LocaleSwitcher';
 import { PaymentMethodIcon } from '~/components/PaymentMethodIcon';
 import { JsonLd } from '~/components/JsonLd';
 import { SignInWithShop } from '~/components/SignInWithShop';

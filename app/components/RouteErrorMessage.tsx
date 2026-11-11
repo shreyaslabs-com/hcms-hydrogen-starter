@@ -19,6 +19,7 @@ export function RouteErrorMessage({ error }: { error: unknown }) {
 
   return (
     <main
+      data-hcms-slot="error"
       id="main-content"
       tabIndex={-1}
       className="max-w-page px-margin mx-auto w-full flex-1 py-16"

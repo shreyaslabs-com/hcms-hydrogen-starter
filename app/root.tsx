@@ -5,6 +5,7 @@ import {
   applyLocalePatches,
   bucketRequest,
   experimentsForClient,
+  applyConditionHeaders,
   applyMarketOverrides,
   applyPreviewHeaders,
   gateExempt,
@@ -34,7 +35,7 @@ import {
 } from 'react-router';
 
 import { CartAnalyticsTracker, PageViewedTracker } from '~/components/AnalyticsTrackers';
-import { MarketSuggestionBanner } from '~/components/MarketSuggestionBanner';
+import { MarketSuggestionSlot as MarketSuggestionBanner } from '~/components/hcms/ui-slots';
 import { blogFeedResponse } from '~/lib/blog-feed';
 import { cartTypeFrom } from '~/lib/cart-type';
 import {
@@ -51,14 +52,17 @@ import { mainCartSchemeClass } from '~/lib/hcms/upsell';
 import { rumSampleRate } from '~/lib/hcms/rum';
 import { trendingSearchesFrom } from '~/lib/hcms/trending-searches';
 import { Deferred } from '~/components/Deferred';
-import { NotFound } from '~/components/NotFound';
-import { RouteErrorMessage } from '~/components/RouteErrorMessage';
+import {
+  NotFoundSlot as NotFound,
+  RouteErrorMessageSlot as RouteErrorMessage,
+} from '~/components/hcms/ui-slots';
 import { HcmsAppAdapter } from '~/components/hcms/AppAdapter';
 import { HeadTags } from '~/components/hcms/HeadTags';
 import { HcmsLayoutGroup } from '~/components/hcms/HcmsLayoutGroup';
 import { HcmsEmbedHtml, HcmsInbox } from '~/components/HcmsEmbeds';
 import { loadClientEmbeds, withoutJudgeme } from '~/lib/hcms/embeds.server';
 import { CartProvider } from '~/lib/cart';
+import { conditionsContext, type ConditionsState } from '~/lib/hcms/conditions';
 import { CART_OPEN_EVENT, EARLY_CART_CLICK_SCRIPT } from '~/lib/cart-drawer';
 import { cartHandlers } from '~/lib/cart-handlers';
 import {
@@ -162,6 +166,9 @@ export const middleware: Route.MiddlewareFunction[] = [
     if (exitPreview) return exitPreview;
     const preview = await resolvePreview(request, env.HCMS_PREVIEW_SECRET);
     context.set(previewContext, preview);
+    // Conditional visibility (T-2.170): page loaders record date boundaries / customer rules.
+    const conditions: ConditionsState = { expiresAt: null, personal: false };
+    context.set(conditionsContext, conditions);
     const loadedDocument = await loadPageDocument({
       storefrontClient,
       cache: context.cache,
@@ -240,6 +247,8 @@ export const middleware: Route.MiddlewareFunction[] = [
 
     const response = await next();
     headerRules(response.headers);
+    // After the merchant's header rules, so their cache lifetime is capped too.
+    if (!preview) applyConditionHeaders(response.headers, conditions, Date.now());
     applyPreviewHeaders(response.headers, preview);
     applyExperimentHeaders(response.headers, experiments);
     const sessionHeaders = new Headers((await sessionManager.commit?.()) ?? undefined);

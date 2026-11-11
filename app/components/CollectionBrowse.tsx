@@ -79,7 +79,7 @@ type LoadMoreResponse<T> = {
   dataSearch: string;
 };
 
-const FILTER_DRAWER_ID = 'collection-filter-drawer';
+export const FILTER_DRAWER_ID = 'collection-filter-drawer';
 const PRICE_MIN_PARAM = 'filter.v.price.gte';
 const PRICE_MAX_PARAM = 'filter.v.price.lte';
 
@@ -90,23 +90,23 @@ function supportsDialogCommands(): boolean {
   );
 }
 
-function openDialogFallback(id: string): void {
+export function openDialogFallback(id: string): void {
   if (supportsDialogCommands() || typeof document === 'undefined') return;
   const dialog = document.getElementById(id);
   if (dialog instanceof HTMLDialogElement && !dialog.open) dialog.showModal();
 }
 
-function closeDialog(id: string): void {
+export function closeDialog(id: string): void {
   if (typeof document === 'undefined') return;
   const dialog = document.getElementById(id);
   if (dialog instanceof HTMLDialogElement) dialog.close();
 }
 
-function requestFormSubmit(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+export function requestFormSubmit(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
   event.currentTarget.form?.requestSubmit();
 }
 
-function currentSortValue(state: CollectionState): string | undefined {
+export function currentSortValue(state: CollectionState): string | undefined {
   return state.sortKey ? getSortByValue(state.sortKey, state.reverse) : undefined;
 }
 
@@ -124,14 +124,14 @@ function filterValueInputParamEntries(input: string): Array<{ name: string; valu
   );
 }
 
-function hiddenInputsFromParams(params: URLSearchParams, exclude = new Set<string>()) {
+export function hiddenInputsFromParams(params: URLSearchParams, exclude = new Set<string>()) {
   return Array.from(params).flatMap(([name, value], index) => {
     if (exclude.has(name)) return [];
     return <input key={`${name}-${value}-${index}`} type="hidden" name={name} value={value} />;
   });
 }
 
-function activeFilterParams(state: CollectionState) {
+export function activeFilterParams(state: CollectionState) {
   return serializeCollectionParams({ filters: state.filters, sortKey: undefined, reverse: false });
 }
 
@@ -428,6 +428,9 @@ export function Toolbar({
   showFilterButton = true,
   filterButtonOnDesktop = false,
   showSort = true,
+  filterButtonOnMobile = true,
+  sortOnMobile = true,
+  sortStyle = 'dropdown',
 }: {
   countText: string;
   defaultSortValue: string;
@@ -438,21 +441,31 @@ export function Toolbar({
   showFilterButton?: boolean;
   filterButtonOnDesktop?: boolean;
   showSort?: boolean;
+  /** T-2.160 `mobile_filter_layout`: phones get compact dropdowns or the floating bar instead. */
+  filterButtonOnMobile?: boolean;
+  sortOnMobile?: boolean;
+  /** T-2.160 `sort_style`: a select or one pill per option. */
+  sortStyle?: 'dropdown' | 'pills';
 }) {
   const state: CollectionState = useCollection();
   const { formProps } = useCollectionForm();
   const resolvedSortValue = currentSortValue(state) ?? defaultSortValue;
   const hiddenParams = activeFilterParams(state);
+  const filterButtonClass = filterButtonOnDesktop
+    ? filterButtonOnMobile
+      ? 'inline-flex'
+      : 'hidden lg:inline-flex'
+    : 'inline-flex lg:hidden';
 
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
       <div className="flex min-w-0 flex-wrap items-center gap-4">
-        {showFilterButton ? (
+        {showFilterButton && (filterButtonOnDesktop || filterButtonOnMobile) ? (
           <button
             type="button"
             commandfor={filterDrawerId}
             command="show-modal"
-            className={`button-outline rounded-button focus-visible:outline-accent min-h-touch-target inline-flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-safe:transition-[color,background-color,border-color,transform] motion-safe:active:scale-[0.97] ${filterButtonOnDesktop ? '' : 'lg:hidden'}`}
+            className={`button-outline rounded-button focus-visible:outline-accent min-h-touch-target cursor-pointer items-center gap-2 px-3 py-1.5 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-safe:transition-[color,background-color,border-color,transform] motion-safe:active:scale-[0.97] ${filterButtonClass}`}
             aria-controls={filterDrawerId}
             aria-haspopup="dialog"
             onClick={() => openDialogFallback(filterDrawerId)}
@@ -479,28 +492,38 @@ export function Toolbar({
         </span>
       </div>
       {showSort ? (
-        <form {...formProps()} method="get" className="flex min-w-0 items-center gap-2">
+        <form
+          {...formProps()}
+          method="get"
+          className={`min-w-0 items-center gap-2 ${sortOnMobile ? 'flex' : 'hidden lg:flex'}`}
+        >
           {hiddenInputsFromParams(hiddenParams)}
           {extraHiddenInputs}
-          <label
-            htmlFor="sort-by"
-            className="text-on-surface-secondary shrink-0 text-sm whitespace-nowrap"
-          >
-            Sort by
-          </label>
-          <select
-            id="sort-by"
-            name="sort_by"
-            value={resolvedSortValue}
-            className="w-auto max-w-full cursor-pointer font-medium"
-            onChange={requestFormSubmit}
-          >
-            {sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          {sortStyle === 'pills' ? (
+            <SortChoices options={sortOptions} value={resolvedSortValue} />
+          ) : (
+            <>
+              <label
+                htmlFor="sort-by"
+                className="text-on-surface-secondary shrink-0 text-sm whitespace-nowrap"
+              >
+                Sort by
+              </label>
+              <select
+                id="sort-by"
+                name="sort_by"
+                value={resolvedSortValue}
+                className="w-auto max-w-full cursor-pointer font-medium"
+                onChange={requestFormSubmit}
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           <noscript>
             <button
               type="submit"
@@ -512,6 +535,52 @@ export function Toolbar({
         </form>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * T-2.160 `sort_style: pills` (and the floating bar's sort sheet, `stacked`): one radio pill per
+ * sort option, submitted on change like the select (`<noscript>` Sort button in the form).
+ */
+export function SortChoices({
+  options,
+  value,
+  stacked = false,
+  onPicked,
+}: {
+  options: SortOption[];
+  value: string;
+  stacked?: boolean;
+  onPicked?: () => void;
+}) {
+  return (
+    <fieldset className={`flex min-w-0 gap-2 ${stacked ? 'flex-col' : 'flex-wrap items-center'}`}>
+      <legend className="sr-only">Sort by</legend>
+      {options.map((option) => (
+        <label
+          key={option.value}
+          className={`rounded-button border-border has-checked:border-on-surface has-focus-visible:outline-accent min-h-touch-target inline-flex cursor-pointer items-center border px-3 py-1.5 text-sm has-checked:font-medium has-focus-visible:outline has-focus-visible:outline-2 has-focus-visible:outline-offset-2 ${stacked ? 'justify-between' : ''}`}
+        >
+          <input
+            type="radio"
+            name="sort_by"
+            value={option.value}
+            checked={option.value === value}
+            className="sr-only"
+            onChange={(event) => {
+              requestFormSubmit(event);
+              onPicked?.();
+            }}
+          />
+          {option.label}
+          {stacked && option.value === value ? (
+            <span aria-hidden="true" className="ms-2">
+              ✓
+            </span>
+          ) : null}
+        </label>
+      ))}
+    </fieldset>
   );
 }
 
@@ -539,7 +608,7 @@ export function FacetForm({
       {sort ? <input type="hidden" name="sort_by" value={sort} /> : null}
       {extraHiddenInputs}
       {bar ? (
-        <ul key={state.handle} ref={list} role="list" className="flex flex-wrap gap-2">
+        <ul key={state.handle} ref={list} role="list" className="relative flex flex-wrap gap-2">
           {availableFilters.map((filter) => (
             <li key={filter.id}>
               <FacetDropdown filter={filter} state={state} currencyCode={currencyCode} />
@@ -795,14 +864,21 @@ export function LoadMore({
 /**
  * Dawn `filter_type: horizontal` (T-2.90): one dropdown disclosure per filter in a bar above the
  * grid (desktop; mobile uses the drawer). Native `<details>` = keyboard + no-JS; `bindFacetBar`
- * adds Escape / one-open / close-outside.
+ * adds Escape / one-open / close-outside. T-2.160 `mobile_filter_layout: dropdowns`: the same
+ * compact pills on phones (`where`), each panel spanning the bar's width there.
  */
-export function HorizontalFacets(props: {
+export function HorizontalFacets({
+  where = 'desktop',
+  ...props
+}: {
   availableFilters: readonly BrowseFilter[];
   currencyCode: string;
+  where?: 'desktop' | 'mobile' | 'all';
 }) {
+  const shown =
+    where === 'all' ? 'block' : where === 'mobile' ? 'block lg:hidden' : 'hidden lg:block';
   return (
-    <div className="mb-4 hidden lg:block">
+    <div className={`mb-4 ${shown}`}>
       <FacetForm {...props} bar />
     </div>
   );
@@ -820,7 +896,7 @@ function FacetDropdown({
   const selectedCount = activeValueCount(filter, state);
   const labelId = useId();
   return (
-    <details className="group relative">
+    <details className="group relative max-lg:static">
       <summary className="marker-hidden button-outline rounded-button min-h-touch-target focus-visible:outline-accent inline-flex cursor-pointer items-center gap-1.5 px-3 py-1.5 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
         <span id={labelId}>{filter.label}</span>
         {selectedCount > 0 ? (
@@ -841,7 +917,7 @@ function FacetDropdown({
           className="size-4 group-open:rotate-180 motion-safe:transition-transform"
         />
       </summary>
-      <div className="border-border bg-surface rounded-card absolute start-0 top-full z-30 mt-2 max-h-96 w-72 overflow-y-auto border p-4 shadow-lg">
+      <div className="border-border bg-surface rounded-card absolute start-0 top-full z-30 mt-2 max-h-96 w-72 max-lg:end-0 max-lg:w-auto overflow-y-auto border p-4 shadow-lg">
         <FacetBody filter={filter} state={state} labelId={labelId} currencyCode={currencyCode} />
       </div>
     </details>

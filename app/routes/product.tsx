@@ -1,11 +1,12 @@
 import { defaultTheme } from '@hcms/sections';
+import { f as productBlockLoaders } from '@hcms/sections/lazy-product';
 import { getSelectedProductOptions } from '@shopify/hydrogen';
 
 import { HcmsMainPage } from '~/components/hcms/HcmsMainPage';
 import { ratingJsonLd, type AppWidgets } from '~/lib/hcms/judgeme';
 import { throwNotFound } from '~/lib/hcms/not-found';
 import { loadTemplatePage } from '~/lib/hcms/page';
-import { productCrumbs } from '~/lib/hcms/product-crumbs';
+import { crumbCollectionHandle, productCrumbs } from '~/lib/hcms/product-crumbs';
 import { routeMeta } from '~/lib/hcms/route-seo';
 import { JsonLd } from '~/components/JsonLd';
 
@@ -17,9 +18,11 @@ import type { Route } from './+types/product';
  * the section query resolves the variant server-side; the route's SEO/JSON-LD/404 request rides
  * in the same batched query. No product template in the document → the default preset's.
  */
-const PRODUCT_META = `query HcmsProductRoute($handle: String!) {
+const PRODUCT_META = `query HcmsProductRoute($handle: String!, $crumbHandle: String!, $hasCrumb: Boolean!) {
+  crumbCollection: collection(handle: $crumbHandle) @include(if: $hasCrumb) { handle title }
   product(handle: $handle) {
     id handle title vendor description
+    crumbCollections: collections(first: 1) { nodes { handle title } }
     seo { title description } hidden: metafield(namespace: "seo", key: "hidden") { value }
     featuredImage { url altText width height }
     rating: metafield(namespace: "reviews", key: "rating") { value }
@@ -32,8 +35,11 @@ const PRODUCT_META = `query HcmsProductRoute($handle: String!) {
 }`;
 
 type Money = { amount: string; currencyCode: string };
+type CrumbCollection = { handle: string; title: string };
 type ProductMeta = {
   id: string;
+  /** T-2.158 breadcrumbs: the product's first collection (fallback without `?collection=`). */
+  crumbCollections?: { nodes: CrumbCollection[] } | null;
   handle: string;
   title: string;
   vendor: string;
@@ -63,6 +69,13 @@ type ProductMeta = {
   };
 };
 
+/**
+ * JS budget (Nov 11): the product page block loaders (`@hcms/sections/lazy-product`) ride with this
+ * route's chunk, so the page's private product blocks load before hydration without waiting for
+ * that map first. Other routes keep it out of their initial JS (it loads on first use there).
+ */
+export const handle = { hcmsProductBlockLoaders: productBlockLoaders };
+
 export function meta({ matches, loaderData }: Route.MetaArgs) {
   const product = loaderData?.product;
   return routeMeta(matches, {
@@ -82,22 +95,37 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   if (!handle) throw new Response('Not Found', { status: 404 });
   const url = new URL(request.url);
   const selectedOptions = getSelectedProductOptions({ searchParams: url.searchParams });
+  const crumbHandle = crumbCollectionHandle(url);
   const hcms = await loadTemplatePage(
     context,
     'product',
     { type: 'product', handle },
     {
       route: { selectedOptions: selectedOptions.map(({ name, value }) => ({ name, value })) },
-      extra: { route: { query: PRODUCT_META, variables: { handle } } },
+      extra: {
+        route: {
+          query: PRODUCT_META,
+          variables: { handle, crumbHandle, hasCrumb: Boolean(crumbHandle) },
+        },
+      },
       fallback: defaultTheme.templates.product,
     },
   );
-  const product = (hcms?.data.route as { product?: ProductMeta | null } | null)?.product;
+  const routeData = hcms?.data.route as {
+    product?: ProductMeta | null;
+    crumbCollection?: CrumbCollection | null;
+  } | null;
+  const product = routeData?.product;
   if (!hcms || !product) return throwNotFound(context, request);
   // JSON-LD built here (server only): the builder never ships in the product route's JS.
   const jsonLd = productJsonLd(product, url.origin, hcms.appWidgets);
-  // `main-product` `show_breadcrumbs`: Home / product (same component as content pages).
-  const crumbs = productCrumbs(hcms.template, product.title);
+  // `main-product` `show_breadcrumbs`: Home / [collection /] product (same component as content
+  // pages). T-2.158: the collection from `?collection=`, else the product's first collection.
+  const crumbs = productCrumbs(
+    hcms.template,
+    product.title,
+    routeData?.crumbCollection ?? product.crumbCollections?.nodes[0],
+  );
   return { hcms, product, origin: url.origin, jsonLd, crumbs };
 }
 

@@ -46,6 +46,7 @@ export function ModelViewer({
   useEffect(loadModelViewer, []);
   return (
     <model-viewer
+      data-hcms-slot="media"
       src={src}
       alt={alt}
       poster={poster ?? undefined}

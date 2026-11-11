@@ -3,6 +3,7 @@ import { hydrateRoot } from 'react-dom/client';
 import { HydratedRouter } from 'react-router/dom';
 
 import { CART_LINES_ATTRIBUTE, loadCartLines } from '~/components/cart-lines-slot';
+import { SLOT_ATTRIBUTE, SLOT_NAMES, loadSlot, type SlotName } from '~/components/hcms/ui-slots';
 import { PRODUCT_SECTION_TYPES, loadProductForm } from '~/components/product/product-slots';
 import { planHydration, readSectionMarks } from '~/lib/hcms/deferred-hydration';
 import { loadLivePreview } from '~/lib/hcms/live-preview';
@@ -20,12 +21,22 @@ async function hydrate() {
   const { elements, sections, looseBlockTypes } = readSectionMarks(document);
   const plan = planHydration(sections, looseBlockTypes, preview);
   const isProduct = (t: string) => PRODUCT_SECTION_TYPES.includes(t);
+  // Optional UI slots (video/3D, country selector, geo banner): the ones marked outside every
+  // deferred section (`ui-slots.ts`).
+  const later = new Set(plan.deferred.map((d) => elements[d.index]));
+  const slots = new Set<SlotName>();
+  for (const el of document.querySelectorAll(`[${SLOT_ATTRIBUTE}]`)) {
+    const slot = el.getAttribute(SLOT_ATTRIBUTE) as SlotName;
+    if (SLOT_NAMES.includes(slot) && !later.has(el.closest('[data-hcms-section-type]') as Element))
+      slots.add(slot);
+  }
   lazySections?.defer(plan.deferred.flatMap((d) => d.types));
   await Promise.all([
     lazySections?.preload(plan.eager),
     plan.eager.some(isProduct) ? loadProductForm() : null,
     // Cart page with lines (D-26: the empty cart page skips the rows/summary chunk).
     document.querySelector(`[${CART_LINES_ATTRIBUTE}]`) ? loadCartLines() : null,
+    ...[...slots].map((slot) => loadSlot(slot)),
     // Editor preview only (T-2.106): live-edit state for the template page.
     preview ? loadLivePreview() : null,
   ]).catch(() => undefined);
@@ -34,6 +45,8 @@ async function hydrate() {
   const idle = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 2000));
   idle(() => void lazySections?.prefetchAll().catch(() => undefined));
   idle(() => void loadCartLines().catch(() => undefined));
+  // Media can mount after hydration (slideshow videos); the other slots load when they render.
+  idle(() => void loadSlot('media').catch(() => undefined));
   // Real-user Core Web Vitals (T-2.15): loaded only when the root opted in, after hydration.
   // Busy stores sample (`data-rate` < 1): unsampled views never load the collector.
   const rumMeta = document.querySelector('meta[name="hcms-rum"]');

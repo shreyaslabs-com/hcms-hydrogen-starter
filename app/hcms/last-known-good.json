@@ -100,6 +100,9 @@
             "menu_uppercase": false,
             "menu_type_desktop": "dropdown",
             "show_collection_images": true,
+            "mega_columns": 4,
+            "utility_alignment": "end",
+            "utility_hide_mobile": true,
             "mobile_menu_source": "same",
             "mobile_menu_style": "accordion",
             "sticky_header_type": "always",
@@ -414,6 +417,7 @@
             "enable_sticky_info": true,
             "color_scheme": "scheme-1",
             "show_breadcrumbs": false,
+            "breadcrumbs_collection": true,
             "padding_top": 32,
             "padding_bottom": 32
           },
@@ -428,6 +432,7 @@
             "b1": {
               "type": "price",
               "settings": {
+                "show_compare_at": true,
                 "show_sale_badge": true,
                 "sale_badge_display": "text",
                 "show_installments": true,
@@ -482,7 +487,14 @@
             },
             "b6": {
               "type": "description",
-              "settings": {}
+              "settings": {
+                "display": "text",
+                "heading": "Description",
+                "collapsible_open": false,
+                "read_more_lines": 0,
+                "read_more_label": "Read more",
+                "read_less_label": "Read less"
+              }
             },
             "b7": {
               "type": "collapsible_tab",
@@ -576,6 +588,10 @@
         "banner": {
           "type": "main-collection-banner",
           "settings": {
+            "layout": "split",
+            "title_alignment": "start",
+            "title_size": "h1",
+            "show_breadcrumbs": true,
             "show_collection_description": true,
             "show_collection_image": false,
             "image_height": "medium",
@@ -629,9 +645,11 @@
             "enable_compare": false,
             "enable_filtering": true,
             "filter_type": "horizontal",
+            "mobile_filter_layout": "drawer",
             "filters_collapsed_default": false,
             "filter_max_values": 10,
             "enable_sorting": true,
+            "sort_style": "dropdown",
             "enable_sticky_filters": false
           },
           "blocks": {},
@@ -712,9 +730,11 @@
             "enable_compare": false,
             "enable_filtering": true,
             "filter_type": "horizontal",
+            "mobile_filter_layout": "drawer",
             "filters_collapsed_default": false,
             "filter_max_values": 10,
             "enable_sorting": true,
+            "sort_style": "dropdown",
             "enable_sticky_filters": false
           },
           "blocks": {},

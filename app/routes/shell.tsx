@@ -1,7 +1,9 @@
 import { Outlet, isRouteErrorResponse, useRouteError } from 'react-router';
 
-import { NotFound } from '~/components/NotFound';
-import { RouteErrorMessage } from '~/components/RouteErrorMessage';
+import {
+  NotFoundSlot as NotFound,
+  RouteErrorMessageSlot as RouteErrorMessage,
+} from '~/components/hcms/ui-slots';
 import { HcmsMainPage } from '~/components/hcms/HcmsMainPage';
 import { throwNotFound } from '~/lib/hcms/not-found';
 import { notFoundPage } from '~/lib/hcms/not-found-data';

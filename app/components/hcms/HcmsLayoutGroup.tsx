@@ -1,6 +1,7 @@
 import { HcmsRenderProvider, HcmsSections, type SectionCss } from '@hcms/hydrogen';
 import type { SectionGroup } from '@hcms/schema';
 
+import { CartConditionsSlot } from '~/components/hcms/cart-conditions-slot';
 import { reportSectionError } from '~/lib/hcms/report';
 import { renderRegistry as registry } from '~/sections/render';
 
@@ -38,6 +39,7 @@ export function HcmsLayoutGroup({
       }}
     >
       <HcmsSections container={group} placement={{ group: name }} />
+      <CartConditionsSlot sectionCss={sectionCss} />
     </HcmsRenderProvider>
   );
 }

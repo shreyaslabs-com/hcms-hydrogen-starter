@@ -4,6 +4,7 @@ import { renderToReadableStream } from 'react-dom/server';
 import { ServerRouter, type EntryContext, type RouterContextProvider } from 'react-router';
 
 import { loadCartLines } from '~/components/cart-lines-slot';
+import { loadSlots } from '~/components/hcms/ui-slots';
 import { loadProductForm } from '~/components/product/product-slots';
 import { NonceContext, contentSecurityPolicy, createNonce } from '~/lib/csp';
 import { envContext } from '~/lib/env';
@@ -21,7 +22,7 @@ export default async function handleRequest(
   const env = context.get(envContext);
   const nonce = createNonce();
   // Lazy on the client; on the server it must be ready before rendering (no SSR suspense).
-  await Promise.all([loadProductForm(), loadCartLines()]);
+  await Promise.all([loadProductForm(), loadCartLines(), loadSlots()]);
   const body = await renderToReadableStream(
     <NonceContext.Provider value={nonce}>
       <ServerRouter context={reactRouterContext} url={request.url} nonce={nonce} />

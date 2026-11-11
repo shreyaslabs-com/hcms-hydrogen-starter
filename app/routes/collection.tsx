@@ -23,6 +23,7 @@ import { shouldUseMockShop } from '~/lib/shop';
 import { throwNotFound } from '~/lib/hcms/not-found';
 import { loadTemplatePage } from '~/lib/hcms/page';
 import { browseRouteState } from '~/lib/hcms/route-state';
+import { collectionCrumbsOn } from '~/lib/hcms/product-crumbs';
 import { loadCollectionPage } from '~/lib/collection';
 import { storefrontClientContext } from '~/lib/storefront';
 import { routeMeta } from '~/lib/hcms/route-seo';
@@ -117,6 +118,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
       hcms: page,
       collection: meta,
       dataSearch: url.searchParams.toString(),
+      crumbs: collectionCrumbsOn(page.template),
       origin: url.origin,
     } as const;
   }
@@ -368,9 +370,12 @@ export default function CollectionRoute({ loaderData }: Route.ComponentProps) {
       {loaderData.hcms ? (
         <main className="flex-1" id="main-content" tabIndex={-1}>
           <BreadcrumbJsonLd collection={loaderData.collection} origin={loaderData.origin} />
-          <div className="max-w-page px-margin mx-auto w-full pt-8">
-            <Breadcrumb collection={loaderData.collection} />
-          </div>
+          {/* `main-collection-banner` `show_breadcrumbs` (T-2.160); JSON-LD stays. */}
+          {loaderData.crumbs ? (
+            <div className="max-w-page px-margin mx-auto w-full pt-8">
+              <Breadcrumb collection={loaderData.collection} />
+            </div>
+          ) : null}
           <RouteSlots value={BROWSE_SLOTS}>
             <HcmsTemplatePage page={loaderData.hcms} />
           </RouteSlots>

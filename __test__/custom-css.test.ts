@@ -17,7 +17,7 @@ test('theme Custom CSS (T-2.74) renders after the app stylesheets, theme fonts b
 });
 
 test('section Custom CSS (T-2.74) is computed in the loader and passed to every renderer', () => {
-  assert.match(source('lib/hcms/page.ts'), /sectionCss: sectionStyles\(containers\)/);
+  assert.match(source('lib/hcms/page.ts'), /sectionCss: \{ \.\.\.sectionStyles\(/);
   assert.match(source('components/hcms/HcmsTemplatePage.tsx'), /sectionCss: page\.sectionCss/);
   const root = source('root.tsx');
   assert.equal(root.match(/sectionCss=\{loaderData\.groups\.sectionCss\}/g)?.length, 3);
