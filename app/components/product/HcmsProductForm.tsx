@@ -31,6 +31,7 @@ import { useLocation, useMatches, useNavigate } from 'react-router';
 import type { AddToCartLine, AppComponents, VariantPickerLook } from '@hcms/hydrogen';
 import { SET_VARIANT_EVENT } from '@hcms/hydrogen';
 
+import { useCheckoutStarted } from '~/components/product/use-checkout-started';
 import { Link, useLocalePath } from '~/components/LocaleLink';
 import { useCart, useCartActions } from '~/lib/cart';
 import { useAfterAddToCart } from '~/lib/after-add-to-cart';
@@ -1072,6 +1073,7 @@ function PlainBuyNow({ disabled }: { disabled: boolean }) {
     (state) => !state.loading && !('readyPromise' in state && state.readyPromise),
   );
   const [pending, setPending] = useState(false);
+  const checkoutStarted = useCheckoutStarted();
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     const updateCart = window.Shopify?.actions?.updateCart;
     if (!updateCart || updateCart.isDefault() || !ready || !selectedVariant) return;
@@ -1101,6 +1103,7 @@ function PlainBuyNow({ disabled }: { disabled: boolean }) {
       );
       // `/checkout` = Hydrogen's `handleShopifyRoutes` redirect to the current cart's checkout.
       if (!result.userErrors?.length) {
+        await checkoutStarted();
         window.location.assign(localize('/checkout'));
         return;
       }

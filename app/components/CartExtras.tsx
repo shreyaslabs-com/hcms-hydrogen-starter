@@ -200,8 +200,17 @@ export function CartFreeShippingBar({
     'root',
   )?.cartFreeShipping;
   const subtotal = useCart((state) => state.data.cost.subtotalAmount);
-  if (!config?.thresholds || (drawer && !config.drawer) || !subtotal) return null;
+  const itemCount = useCart((state) => state.data.totalQuantity ?? 0);
+  if (!config || (!config.thresholds && !config.itemGoals)) return null;
+  if ((drawer && !config.drawer) || !subtotal) return null;
+  // T-2.159: item-count goals ("Add 2 more to get B2G2") replace the amount goals when set.
   return (
-    <FreeShippingBar subtotal={subtotal} thresholds={config.thresholds} className={className} />
+    <FreeShippingBar
+      subtotal={subtotal}
+      thresholds={config.thresholds}
+      itemGoals={config.itemGoals}
+      itemCount={itemCount}
+      className={className}
+    />
   );
 }

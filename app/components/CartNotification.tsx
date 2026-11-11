@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouteLoaderData } from 'react-router';
 
 import { Link } from '~/components/LocaleLink';
-import { publishCheckoutStarted } from '~/components/AnalyticsTrackers';
+import { publishCheckoutStarted } from '~/lib/cart-analytics';
 import { useCart } from '~/lib/cart';
 import { CART_NOTIFICATION_EVENT } from '~/lib/cart-type';
 

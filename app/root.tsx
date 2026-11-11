@@ -39,6 +39,7 @@ import { blogFeedResponse } from '~/lib/blog-feed';
 import { cartTypeFrom } from '~/lib/cart-type';
 import {
   cartDisplayForDocument,
+  cartDrawerForDocument,
   cartEmptyForDocument,
   cartRailsForDocument,
 } from '~/lib/hcms/cart-display';
@@ -46,7 +47,7 @@ import { cartGiftsForDocument } from '~/lib/hcms/cart-gifts';
 import { cartFreeShippingFrom } from '~/lib/hcms/free-shipping';
 import { inlineGoogleFonts, themeFontFaces } from '~/lib/hcms/google-fonts.server';
 import { fontProxySecret } from '~/lib/hcms/font-proxy';
-import { cartUpsellEnabled, mainCartSchemeClass } from '~/lib/hcms/upsell';
+import { mainCartSchemeClass } from '~/lib/hcms/upsell';
 import { rumSampleRate } from '~/lib/hcms/rum';
 import { trendingSearchesFrom } from '~/lib/hcms/trending-searches';
 import { Deferred } from '~/components/Deferred';
@@ -377,8 +378,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       cartTypeFrom(context.get(documentContext).document.settings) === 'drawer'
         ? EARLY_CART_CLICK_SCRIPT
         : null,
-    // Cart drawer upsell follows the cart page's `main-cart` `show_upsell` toggle (T-2.43).
-    cartUpsell: cartUpsellEnabled(context.get(documentContext).document),
+    // Cart drawer settings (T-2.159): upsell (own setting, else the cart page's `show_upsell`),
+    // upsell layout + fallback collection, line badges/nudges, layout, Shop Pay, payment logos.
+    cartDrawer: cartDrawerForDocument(context.get(documentContext).document),
     // Cart page colour scheme for the drawer's Checkout button (S2-11).
     cartScheme: mainCartSchemeClass(context.get(documentContext).document),
     // Free-shipping bar (T-2.43): per-currency thresholds (theme settings) + drawer toggle.

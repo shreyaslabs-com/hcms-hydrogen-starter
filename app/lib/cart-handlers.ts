@@ -8,7 +8,8 @@ import { createCartServerHandlers, gql } from '@shopify/hydrogen';
  * - line `cost` unit/compare-at prices + `discountAllocations` + cart subtotal/total (richer drawer,
  *   `lib/hcms/cart-savings.ts`).
  * - line `sellingPlanAllocation` (T-2.104): the subscription plan name under the line's options;
- *   merchandise `id` finds the gift-wrap line (T-2.80).
+ *   merchandise `id` finds the gift-wrap line (T-2.80); product `tags` drive the drawer's line
+ *   badges + nudges (T-2.159, `@hcms/schema` `lineBadges`/`lineNudge`).
  * - `lineComponents` of a Cart Transform merged line (Build a box bundle, ADR 010): the cart shows
  *   the bundle as one row with its items (`lib/hcms/cart-boxes.ts`).
  */
@@ -64,6 +65,9 @@ const CART_FRAGMENT = gql(`
         merchandise {
           ... on ProductVariant {
             id
+            product {
+              tags
+            }
           }
         }
       }
@@ -122,7 +126,7 @@ const LINE_COMPONENTS = `
 `;
 
 export const CART_FRAGMENT_WITH_COMPONENTS = CART_FRAGMENT.replace(
-  /(merchandise \{\s*\.\.\. on ProductVariant \{\s*id\s*\}\s*\})/,
+  /(merchandise \{\s*\.\.\. on ProductVariant \{\s*id\s*product \{\s*tags\s*\}\s*\}\s*\})/,
   `$1
 ${LINE_COMPONENTS}`,
 ) as typeof CART_FRAGMENT;

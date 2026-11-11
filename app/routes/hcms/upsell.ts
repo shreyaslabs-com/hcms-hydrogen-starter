@@ -21,6 +21,8 @@ const UPSELL_QUERY = gql(`
     $hasIds0: Boolean!
     $ids1: [ID!]!
     $hasIds1: Boolean!
+    $fc: String!
+    $hasFc: Boolean!
     $first: Int!
     $country: CountryCode
     $language: LanguageCode
@@ -41,6 +43,13 @@ const UPSELL_QUERY = gql(`
       }
     }
     col1: collection(handle: $c1) @include(if: $hasC1) {
+      products(first: $first) {
+        nodes {
+          ...HcmsUpsellProduct
+        }
+      }
+    }
+    fallback: collection(handle: $fc) @include(if: $hasFc) {
       products(first: $first) {
         nodes {
           ...HcmsUpsellProduct
@@ -71,10 +80,10 @@ const UPSELL_QUERY = gql(`
   }
 `);
 
-const EMPTY = { complementary: [], related: [], rails: [[], []] };
+const EMPTY = { complementary: [], related: [], fallback: [], rails: [[], []] };
 
 /**
- * `/{market?}/__hcms/upsell?handle=&c0=&c1=&p0=&p1=` (T-2.43, P1-7): "You may also like" rails for the
+ * `/{market?}/__hcms/upsell?handle=&fc=&c0=&c1=&p0=&p1=` (T-2.43, P1-7, T-2.159 `fc` fallback): "You may also like" rails for the
  * cart drawer and cart page, fetched by the client after the cart is shown, so page JS and the
  * page's one batched query stay untouched. Public catalog data only; market prices via
  * `@inContext`; short public cache. Response: `{ complementary, related, rails: [products, products] }`
@@ -99,6 +108,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         hasIds0: req.ids[0].length > 0,
         ids1: req.ids[1],
         hasIds1: req.ids[1].length > 0,
+        // Fallback collection only matters for the automatic rail (T-2.159).
+        fc: req.fallback ?? '',
+        hasFc: Boolean(req.handle && req.fallback),
         first: UPSELL_RAIL_ITEMS,
       },
     });
@@ -107,6 +119,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       {
         complementary: data?.complementary ?? [],
         related: data?.related ?? [],
+        fallback: nodes(data?.fallback?.products.nodes),
         rails: [
           nodes(data?.col0?.products.nodes ?? data?.ids0),
           nodes(data?.col1?.products.nodes ?? data?.ids1),

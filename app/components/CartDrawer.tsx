@@ -1,3 +1,4 @@
+import { useAppComponents } from '@hcms/hydrogen';
 import { ShopPayButton } from '@shopify/hydrogen/react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouteLoaderData } from 'react-router';
@@ -14,10 +15,11 @@ import {
   CART_DRAWER_ID,
 } from '~/lib/cart-drawer';
 import { groupCartLines } from '~/lib/hcms/cart-boxes';
-import type { CartEmpty } from '~/lib/hcms/cart-display';
+import type { CartDrawer as CartDrawerConfig, CartEmpty } from '~/lib/hcms/cart-display';
+import { cartSavings } from '~/lib/hcms/cart-savings';
 import { useFormatPrice } from '~/lib/money';
 
-import { publishCartViewed, publishCheckoutStarted } from './AnalyticsTrackers';
+import { publishCartViewed, publishCheckoutStarted } from '~/lib/cart-analytics';
 import { CartBoxRow } from './CartBoxRow';
 import { useCartAnnouncement } from './cart-announcement';
 import { CartLineItem } from './CartLineItem';
@@ -123,9 +125,18 @@ function EmptyCart() {
   );
 }
 
+/** Theme settings › Cart drawer options (T-2.159); `null` on old root data = today's drawer. */
+function useDrawerConfig(): CartDrawerConfig | null {
+  return useRouteLoaderData<{ cartDrawer?: CartDrawerConfig }>('root')?.cartDrawer ?? null;
+}
+
 function CartLines({ open }: { open: boolean }) {
   useFreshCartFields();
-  const upsell = useRouteLoaderData<{ cartUpsell?: boolean }>('root')?.cartUpsell ?? true;
+  const config = useDrawerConfig();
+  // T-2.159: the drawer's own upsell setting (unset = the cart page's `show_upsell`, resolved
+  // by the root loader).
+  const upsell = config?.showUpsell ?? true;
+  const summary = config?.layout === 'summary_card';
   const loading = useCart((state) => state.loading);
   const lines = useCart((state) => state.data.lines.nodes);
   const display = useCartDisplay();
@@ -157,70 +168,161 @@ function CartLines({ open }: { open: boolean }) {
       </ul>
       {display ? <CartTrustRow icons={display.trust} /> : null}
       {upsell ? <CartUpsell active={open} compact /> : null}
+      {summary ? <CartSummaryCard /> : null}
+    </>
+  );
+}
+
+function useCostPending(): boolean {
+  const pending = useCart((state) => state.pending);
+  const revalidating = useCart((state) => 'revalidating' in state && state.revalidating === true);
+  return hasPendingCost(pending) || revalidating;
+}
+
+function DiscountDisclosure() {
+  return (
+    <details className="group text-sm">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between font-medium [&::-webkit-details-marker]:hidden">
+        Discount code
+        <img
+          src="/icons/icon-chevron-down.svg"
+          alt=""
+          aria-hidden="true"
+          className="size-4 group-open:rotate-180 motion-safe:transition-transform"
+        />
+      </summary>
+      <div className="pt-2">
+        <CartDiscounts />
+      </div>
+    </details>
+  );
+}
+
+function EstimatedTotal() {
+  const formatPrice = useFormatPrice();
+  const total = useCart((state) => state.data.cost.totalAmount);
+  const isPending = useCostPending();
+  return (
+    <div className="flex items-center justify-between" aria-busy={isPending}>
+      <span className="text-on-surface text-sm font-medium">
+        Estimated total
+        {isPending ? <span aria-hidden="true"> (updating)</span> : null}
+      </span>
+      <span
+        className={`text-on-surface text-base font-medium ${isPending ? 'text-on-surface-secondary' : ''}`}
+      >
+        <CartCompareTotal />
+        {formatPrice(total)}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * T-2.159 `drawer_layout: summary_card`: gift options, discount code and a bill summary card
+ * (subtotal, savings, shipping note) scroll with the lines; the footer keeps only the total +
+ * checkout, so it stays short on phones.
+ */
+function CartSummaryCard() {
+  const formatPrice = useFormatPrice();
+  const lines = useCart((state) => state.data.lines.nodes);
+  const cost = useCart((state) => state.data.cost);
+  const display = useCartDisplay();
+  const isPending = useCostPending();
+  const saved = display && !display.showSavings ? null : cartSavings(lines as never, cost);
+  return (
+    <div className="mt-6 flex flex-col gap-3" data-cart-summary-card="">
+      <CartGifts drawer className="flex flex-col gap-2" />
+      <DiscountDisclosure />
+      <section
+        aria-labelledby="cart-summary-title"
+        className="border-border rounded-card bg-surface border p-4"
+      >
+        <h3 id="cart-summary-title" className="text-on-surface text-sm font-medium">
+          Order summary
+        </h3>
+        <dl
+          className={`mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 text-sm ${isPending ? 'opacity-60' : ''}`}
+          aria-busy={isPending}
+        >
+          <dt className="text-on-surface-secondary">Subtotal</dt>
+          <dd className="text-on-surface text-end">{formatPrice(cost.subtotalAmount)}</dd>
+          {saved ? (
+            <>
+              <dt className="text-success">Savings</dt>
+              <dd className="text-success text-end" data-cart-summary-savings="">
+                −{formatPrice(saved)}
+              </dd>
+            </>
+          ) : null}
+          <dt className="text-on-surface-secondary">Shipping</dt>
+          <dd className="text-on-surface-secondary text-end">Calculated at checkout</dd>
+        </dl>
+      </section>
+    </div>
+  );
+}
+
+/** Checkout + optional Shop Pay (T-2.159 `show_accelerated_checkout`) + payment chips/logos. */
+function CheckoutActions() {
+  const cart = useCart((state) => state.data);
+  const display = useCartDisplay();
+  const config = useDrawerConfig();
+  const { PaymentIcons } = useAppComponents();
+  // S2-11: the cart page's colour scheme, so Checkout matches `/cart`.
+  const scheme = useRouteLoaderData<{ cartScheme?: string }>('root')?.cartScheme ?? '';
+  if (!cart.checkoutUrl) return null;
+  return (
+    <>
+      {config?.acceleratedCheckout === false ? null : (
+        <ShopPayButton width="100%" borderRadius="8px" />
+      )}
+      <a
+        href={cart.checkoutUrl}
+        onClick={() => publishCheckoutStarted(cart)}
+        className={`${scheme} rounded-button button-primary focus-visible:outline-accent inline-flex h-11 w-full items-center justify-center gap-2 px-4 text-sm font-medium no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-safe:transition-[color,background-color,border-color,transform] motion-safe:active:scale-[0.97]`}
+      >
+        Checkout
+      </a>
+      {display ? <PaymentChips icons={display.payments} /> : null}
+      {config?.paymentLogos ? (
+        <div className="flex justify-center empty:hidden" data-cart-payment-logos="">
+          <PaymentIcons />
+        </div>
+      ) : null}
     </>
   );
 }
 
 function CartFooter() {
-  const formatPrice = useFormatPrice();
-  const cart = useCart((state) => state.data);
-  const pending = useCart((state) => state.pending);
-  const revalidating = useCart((state) => 'revalidating' in state && state.revalidating === true);
-  const display = useCartDisplay();
-  // S2-11: the cart page's colour scheme, so Checkout matches `/cart`.
-  const scheme = useRouteLoaderData<{ cartScheme?: string }>('root')?.cartScheme ?? '';
-  const hasLines = cart.lines.nodes.length > 0;
-  const isPending = hasPendingCost(pending) || revalidating;
+  const hasLines = useCart((state) => state.data.lines.nodes.length > 0);
+  const summary = useDrawerConfig()?.layout === 'summary_card';
 
   if (!hasLines) return null;
+
+  if (summary) {
+    // Sticky footer (T-2.159): the drawer's flex column keeps it pinned under the scroll area.
+    return (
+      <div className="border-border bg-surface shrink-0 border-t p-4" data-cart-footer="sticky">
+        <div className="flex flex-col gap-3">
+          <EstimatedTotal />
+          <CheckoutActions />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border-border shrink-0 border-t p-4">
       <div className="flex flex-col gap-3">
         <CartGifts drawer className="flex flex-col gap-2" />
-        <div className="flex items-center justify-between" aria-busy={isPending}>
-          <span className="text-on-surface text-sm font-medium">
-            Estimated total
-            {isPending ? <span aria-hidden="true"> (updating)</span> : null}
-          </span>
-          <span
-            className={`text-on-surface text-base font-medium ${isPending ? 'text-on-surface-secondary' : ''}`}
-          >
-            <CartCompareTotal />
-            {formatPrice(cart.cost.totalAmount)}
-          </span>
-        </div>
+        <EstimatedTotal />
         <CartSavingsLine />
         <p className="text-on-surface-secondary text-xs">
           Taxes and shipping calculated at checkout
         </p>
-        <details className="group text-sm">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between font-medium [&::-webkit-details-marker]:hidden">
-            Discount code
-            <img
-              src="/icons/icon-chevron-down.svg"
-              alt=""
-              aria-hidden="true"
-              className="size-4 group-open:rotate-180 motion-safe:transition-transform"
-            />
-          </summary>
-          <div className="pt-2">
-            <CartDiscounts />
-          </div>
-        </details>
-        {cart.checkoutUrl ? (
-          <>
-            <ShopPayButton width="100%" borderRadius="8px" />
-            <a
-              href={cart.checkoutUrl}
-              onClick={() => publishCheckoutStarted(cart)}
-              className={`${scheme} rounded-button button-primary focus-visible:outline-accent inline-flex h-11 w-full items-center justify-center gap-2 px-4 text-sm font-medium no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-safe:transition-[color,background-color,border-color,transform] motion-safe:active:scale-[0.97]`}
-            >
-              Checkout
-            </a>
-            {display ? <PaymentChips icons={display.payments} /> : null}
-          </>
-        ) : null}
+        <DiscountDisclosure />
+        <CheckoutActions />
       </div>
     </div>
   );

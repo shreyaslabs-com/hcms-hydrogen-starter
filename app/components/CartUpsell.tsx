@@ -1,9 +1,10 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useRouteLoaderData } from 'react-router';
 
+import { announceCart } from '~/components/cart-announcement';
 import { Link, useLocalePath } from '~/components/LocaleLink';
 import { useCart } from '~/lib/cart';
-import type { CartRail } from '~/lib/hcms/cart-display';
+import type { CartDrawer, CartRail } from '~/lib/hcms/cart-display';
 import {
   DEFAULT_RAILS,
   UPSELL_MAX,
@@ -21,9 +22,14 @@ import { useFormatPrice } from '~/lib/money';
 type UpsellData = {
   complementary?: UpsellProduct[];
   related?: UpsellProduct[];
+  /** Theme fallback collection for the automatic rail (T-2.159). */
+  fallback?: UpsellProduct[];
   /** Collection / product-list results, indexed like the configured rails (P1-7). */
   rails?: UpsellProduct[][];
 };
+
+/** Drawer card rail (T-2.159): a few more than the list, they scroll sideways. */
+const CARD_ITEMS = 6;
 
 /** Per page session: one request per market + seed product, shared by the drawer and cart page. */
 const cache = new Map<string, Promise<UpsellData | null>>();
@@ -43,24 +49,29 @@ function loadUpsell(url: string): Promise<UpsellData | null> {
   return pending;
 }
 
+type Look = 'list' | 'cards' | 'page';
+
 /**
  * "You may also like" (T-2.43) for the cart drawer and cart page: recommendations for the first
- * cart line's product (`/__hcms/upsell`, COMPLEMENTARY → RELATED), loaded on the client only when
- * `active` (drawer open / page mounted). Single-variant products add in one click through Standard
- * Actions `updateCart` (the cart store projects the line and tracks pending/errors, per the
- * `hydrogen-cart-ui` skill); others link to the product page. Prices come from the server.
+ * cart line's product (`/__hcms/upsell`, COMPLEMENTARY → RELATED → theme fallback collection),
+ * loaded on the client only when `active` (drawer open / page mounted). Single-variant products add
+ * in one click through Standard Actions `updateCart` (the cart store projects the line and tracks
+ * pending/errors, per the `hydrogen-cart-ui` skill); others link to the product page. Prices come
+ * from the server. Drawer look = theme `cart.upsell_layout` (T-2.159: `list` rows or `cards`).
  */
 export function CartUpsell({ active, compact = false }: { active: boolean; compact?: boolean }) {
   const lines = useCart((state) => state.data.lines.nodes);
   const loading = useCart((state) => state.loading);
   const localize = useLocalePath();
-  const configured = useRouteLoaderData<{ cartRails?: CartRail[] }>('root')?.cartRails;
+  const root = useRouteLoaderData<{ cartRails?: CartRail[]; cartDrawer?: CartDrawer }>('root');
+  const configured = root?.cartRails;
   const rails: (RailSpec & { heading?: string; imageUrl?: string | null })[] = configured?.length
     ? configured
     : DEFAULT_RAILS;
+  const look: Look = compact ? (root?.cartDrawer?.upsellLayout ?? 'list') : 'page';
   const { handle, inCart } = useMemo(() => upsellSeed(lines), [lines]);
   const [data, setData] = useState<{ key: string; value: UpsellData | null } | null>(null);
-  const query = upsellQuery(rails, handle);
+  const query = upsellQuery(rails, handle, root?.cartDrawer?.fallbackCollection ?? null);
   const url = query ? `${localize('/__hcms/upsell')}?${query}` : null;
 
   useEffect(() => {
@@ -76,6 +87,7 @@ export function CartUpsell({ active, compact = false }: { active: boolean; compa
 
   const value = data && data.key === url ? data.value : null;
   if (!url || !value) return null;
+  const max = look === 'page' ? PAGE_ITEMS : look === 'cards' ? CARD_ITEMS : UPSELL_MAX;
   return (
     <>
       {rails.map((rail, i) => (
@@ -84,27 +96,35 @@ export function CartUpsell({ active, compact = false }: { active: boolean; compa
           rail={rail}
           items={
             rail.source === 'auto'
-              ? upsellItems(value, inCart, compact ? UPSELL_MAX : PAGE_ITEMS)
-              : railItems(value.rails?.[i], inCart, compact ? undefined : PAGE_ITEMS)
+              ? upsellItems(value, inCart, max)
+              : railItems(value.rails?.[i], inCart, look === 'list' ? undefined : max)
           }
-          compact={compact}
+          look={look}
         />
       ))}
     </>
   );
 }
 
+const LIST_CLASS: Record<Look, string> = {
+  list: 'grid grid-cols-1 gap-3',
+  // Sideways scroll, snap per card; the cards keep a fixed width so nothing shifts as images load.
+  cards: 'flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]',
+  page: 'grid grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-4',
+};
+
 function UpsellRail({
   rail,
   items,
-  compact,
+  look,
 }: {
   rail: { heading?: string; imageUrl?: string | null };
   items: UpsellItem[];
-  compact: boolean;
+  look: Look;
 }) {
   const headingId = useId();
   if (items.length === 0) return null;
+  const compact = look !== 'page';
   const image = rail.imageUrl ? shopifyImageUrl(rail.imageUrl, { width: 800 }) : null;
   return (
     <section
@@ -112,6 +132,7 @@ function UpsellRail({
       className={`${compact ? 'mt-6' : 'mt-10'} ${image ? 'rounded bg-cover bg-center p-3' : ''}`}
       style={image ? { backgroundImage: `url("${image}")` } : undefined}
       data-upsell-rail=""
+      data-upsell-layout={look}
     >
       <h2
         id={headingId}
@@ -121,10 +142,10 @@ function UpsellRail({
       </h2>
       <ul
         role="list"
-        className={`mt-3 grid ${compact ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-4'} ${image ? 'bg-surface rounded p-2' : ''}`}
+        className={`mt-3 ${LIST_CLASS[look]} ${image ? 'bg-surface rounded p-2' : ''}`}
       >
         {items.map((item) => (
-          <UpsellCard key={item.handle} item={item} compact={compact} />
+          <UpsellCard key={item.handle} item={item} look={look} />
         ))}
       </ul>
     </section>
@@ -134,7 +155,7 @@ function UpsellRail({
 /** Cart page cross-sell: product cards, 2 per row on phones and 4 from `lg` (templates review). */
 const PAGE_ITEMS = 4;
 
-function UpsellCard({ item, compact }: { item: UpsellItem; compact: boolean }) {
+function UpsellCard({ item, look }: { item: UpsellItem; look: Look }) {
   const formatPrice = useFormatPrice();
   const cartId = useCart((state) => state.data.id);
   const ready = useCart(
@@ -169,17 +190,32 @@ function UpsellCard({ item, compact }: { item: UpsellItem; compact: boolean }) {
           },
         },
       );
-      setStatus(result.userErrors?.length ? 'error' : 'idle');
+      const failed = Boolean(result.userErrors?.length);
+      setStatus(failed ? 'error' : 'idle');
+      // The card leaves the rail once the product is in the cart: say what happened (T-2.159).
+      if (!failed) announceCart(`${item.title} added to your cart`);
     } catch {
       setStatus('error');
     }
   };
 
-  const size = compact ? 128 : 480;
+  const cards = look === 'cards';
+  const row = look === 'list';
+  const size = row ? 128 : cards ? 288 : 480;
+  const button = `rounded-button button-outline inline-flex min-h-11 shrink-0 items-center justify-center text-sm ${row ? 'px-4' : cards ? 'w-full px-3' : 'w-full px-4'}`;
   return (
-    <li className={compact ? 'flex items-center gap-3' : 'flex flex-col gap-3'}>
+    <li
+      className={
+        row
+          ? 'flex items-center gap-3'
+          : cards
+            ? 'flex w-36 shrink-0 snap-start flex-col gap-2'
+            : 'flex flex-col gap-3'
+      }
+      data-upsell-card={cards ? '' : undefined}
+    >
       <div
-        className={`bg-surface-secondary shrink-0 overflow-hidden ${compact ? 'size-16' : 'rounded-card aspect-square w-full'}`}
+        className={`bg-surface-secondary shrink-0 overflow-hidden ${row ? 'size-16' : 'rounded-card aspect-square w-full'}`}
       >
         {item.image ? (
           <img
@@ -192,10 +228,10 @@ function UpsellCard({ item, compact }: { item: UpsellItem; compact: boolean }) {
           />
         ) : null}
       </div>
-      <div className="min-w-0 flex-1">
+      <div className={`min-w-0 ${cards ? 'flex flex-1 flex-col' : 'flex-1'}`}>
         <Link
           to={`/products/${item.handle}`}
-          className="text-on-surface line-clamp-2 text-sm no-underline"
+          className={`text-on-surface line-clamp-2 text-sm no-underline ${cards ? 'min-h-[2lh]' : ''}`}
         >
           {item.title}
         </Link>
@@ -214,15 +250,21 @@ function UpsellCard({ item, compact }: { item: UpsellItem; compact: boolean }) {
           aria-describedby={status === 'error' ? errorId : undefined}
           aria-busy={status === 'adding' || undefined}
           disabled={status === 'adding'}
-          className={`rounded-button button-outline inline-flex min-h-11 shrink-0 items-center justify-center px-4 text-sm disabled:opacity-60 ${compact ? '' : 'w-full'}`}
+          className={`${button} disabled:opacity-60`}
         >
-          Add
+          {cards ? (
+            <>
+              <span aria-hidden="true">+</span>&nbsp;Add
+            </>
+          ) : (
+            'Add'
+          )}
         </button>
       ) : (
         <Link
           to={`/products/${item.handle}`}
           aria-label={`Choose options for ${item.title}`}
-          className={`rounded-button button-outline inline-flex min-h-11 shrink-0 items-center justify-center px-4 text-sm no-underline ${compact ? '' : 'w-full'}`}
+          className={`${button} no-underline`}
         >
           Choose
         </Link>

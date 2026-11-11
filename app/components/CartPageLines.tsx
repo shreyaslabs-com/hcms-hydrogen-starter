@@ -1,7 +1,7 @@
 import { ShopPayButton } from '@shopify/hydrogen/react';
 import type { ReactNode } from 'react';
 
-import { publishCheckoutStarted } from '~/components/AnalyticsTrackers';
+import { publishCheckoutStarted } from '~/lib/cart-analytics';
 import { CartBoxRow } from '~/components/CartBoxRow';
 import { CartLineItem } from '~/components/CartLineItem';
 import { CartDiscounts, CartFreeShippingBar, CartNoteDisclosure } from '~/components/CartExtras';

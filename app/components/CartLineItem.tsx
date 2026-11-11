@@ -29,7 +29,8 @@ export type CartLineView = {
     title?: string | null;
     selectedOptions?: Array<{ name: string; value: string }> | null;
     image?: { url: string; altText?: string | null } | null;
-    product?: { title?: string | null; handle?: string | null } | null;
+    /** `tags`: line badges + nudges (T-2.159); absent on optimistic lines. */
+    product?: { title?: string | null; handle?: string | null; tags?: string[] | null } | null;
   } | null;
 };
 

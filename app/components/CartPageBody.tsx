@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, type ReactNode } from 'react';
 
-import { publishCartViewed } from '~/components/AnalyticsTrackers';
+import { publishCartViewed } from '~/lib/cart-analytics';
 import { useCartAnnouncement } from '~/components/cart-announcement';
 import { CartLinesSlot } from '~/components/cart-lines-slot';
 import { Deferred } from '~/components/Deferred';

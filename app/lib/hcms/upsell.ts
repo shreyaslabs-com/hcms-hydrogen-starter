@@ -37,11 +37,16 @@ export const UPSELL_MAX = 3;
 export const UPSELL_HANDLE = /^[a-z0-9][a-z0-9-]{0,254}$/i;
 
 /**
- * COMPLEMENTARY when the merchant set any up (Search & Discovery), else RELATED. Products already
- * in the cart, sold-out products and duplicates are dropped.
+ * COMPLEMENTARY when the merchant set any up (Search & Discovery), else RELATED, else the theme's
+ * fallback collection (T-2.159: new stores have no recommendation data). Products already in the
+ * cart, sold-out products and duplicates are dropped.
  */
 export function upsellItems(
-  data: { complementary?: UpsellProduct[] | null; related?: UpsellProduct[] | null } | null,
+  data: {
+    complementary?: UpsellProduct[] | null;
+    related?: UpsellProduct[] | null;
+    fallback?: UpsellProduct[] | null;
+  } | null,
   excludeHandles: Iterable<string> = [],
   max = UPSELL_MAX,
 ): UpsellItem[] {
@@ -55,7 +60,8 @@ export function upsellItems(
         !exclude.has(p.handle),
     );
   const complementary = usable(data?.complementary);
-  const source = complementary.length ? complementary : usable(data?.related);
+  const related = complementary.length ? complementary : usable(data?.related);
+  const source = related.length ? related : usable(data?.fallback);
   const seen = new Set<string>();
   const items: UpsellItem[] = [];
   for (const product of source) {
@@ -160,10 +166,20 @@ const PRODUCT_GID = /^gid:\/\/shopify\/Product\/\d{1,20}$/;
 /** No rails configured → the original single automatic rail. */
 export const DEFAULT_RAILS: RailSpec[] = [{ source: 'auto' }];
 
-/** Query string for `/__hcms/upsell` (`handle` seed, `c<i>` collection handle, `p<i>` product GIDs). */
-export function upsellQuery(rails: readonly RailSpec[], seed: string | null): string {
+/**
+ * Query string for `/__hcms/upsell` (`handle` seed, `c<i>` collection handle, `p<i>` product GIDs,
+ * `fc` fallback collection for the automatic rail, T-2.159).
+ */
+export function upsellQuery(
+  rails: readonly RailSpec[],
+  seed: string | null,
+  fallbackCollection: string | null = null,
+): string {
   const params = new URLSearchParams();
-  if (seed && rails.some((r) => r.source === 'auto')) params.set('handle', seed);
+  const auto = rails.some((r) => r.source === 'auto');
+  if (seed && auto) params.set('handle', seed);
+  if (auto && fallbackCollection && UPSELL_HANDLE.test(fallbackCollection))
+    params.set('fc', fallbackCollection);
   rails.slice(0, UPSELL_RAIL_MAX).forEach((rail, i) => {
     if (rail.source === 'collection' && rail.collection) params.set(`c${i}`, rail.collection);
     if (rail.source === 'products' && rail.products?.length)
@@ -176,15 +192,18 @@ export type UpsellRequest = {
   handle: string | null;
   collections: [string | null, string | null];
   ids: [string[], string[]];
+  /** Fallback collection of the automatic rail (T-2.159). */
+  fallback: string | null;
 };
 
 /** Validates the route's params (public data, but handles/GIDs must still be well formed). */
 export function parseUpsellRequest(params: URLSearchParams): UpsellRequest {
   const handle = params.get('handle')?.trim() ?? '';
-  const collection = (i: number) => {
-    const value = params.get(`c${i}`)?.trim() ?? '';
+  const valid = (key: string) => {
+    const value = params.get(key)?.trim() ?? '';
     return UPSELL_HANDLE.test(value) ? value : null;
   };
+  const collection = (i: number) => valid(`c${i}`);
   const ids = (i: number) =>
     (params.get(`p${i}`) ?? '')
       .split(',')
@@ -195,6 +214,7 @@ export function parseUpsellRequest(params: URLSearchParams): UpsellRequest {
     handle: UPSELL_HANDLE.test(handle) ? handle : null,
     collections: [collection(0), collection(1)],
     ids: [ids(0), ids(1)],
+    fallback: valid('fc'),
   };
 }
 
